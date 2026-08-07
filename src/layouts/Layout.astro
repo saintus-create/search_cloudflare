@@ -1,0 +1,51 @@
+---
+import { Search, MessageSquare, Globe, Zap } from '@lucide/astro';
+
+interface Props {
+	title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="description" content="Cloudflare Native Search Portal" />
+		<meta name="viewport" content="width=device-width" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="generator" content={Astro.generator} />
+		<title>{title}</title>
+	</head>
+	<body class="bg-slate-50 text-slate-900 min-h-screen">
+		<nav class="bg-white border-b border-slate-200 sticky top-0 z-10">
+			<div class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
+				<div class="flex items-center gap-2 font-bold text-xl text-orange-600">
+					<Zap class="w-6 h-6" />
+					<span>CloudSearch</span>
+				</div>
+				<div class="flex gap-6 text-sm font-medium text-slate-600">
+					<a href="/" class="hover:text-orange-600 flex items-center gap-1">
+						<Search class="w-4 h-4" /> Search
+					</a>
+					<a href="#chat" class="hover:text-orange-600 flex items-center gap-1">
+						<MessageSquare class="w-4 h-4" /> AI Chat
+					</a>
+				</div>
+			</div>
+		</nav>
+		<main class="max-w-5xl mx-auto px-4 py-8">
+			<slot />
+		</main>
+		<footer class="border-t border-slate-200 py-8 mt-12 text-center text-slate-500 text-sm">
+			<p>Built with Astro + Cloudflare D1, KV, and Workers AI</p>
+		</footer>
+	</body>
+</html>
+
+<style is:global>
+	@tailwind base;
+	@tailwind components;
+	@tailwind utilities;
+</style>
