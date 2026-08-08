@@ -2,13 +2,18 @@ import type { APIRoute } from 'astro';
 
 export const GET: APIRoute = async ({ url, locals }) => {
   const query = url.searchParams.get('q');
-  const { DB } = locals.runtime.env;
+  const env = locals?.runtime?.env || {};
+  const DB = env.DB;
+  if (!DB) {
+    return new Response(JSON.stringify({ results: [], error: "Missing DB binding" }));
+  }
 
   if (!query) {
     return new Response(JSON.stringify({ results: [] }));
   }
 
   try {
+    const safeQuery = query.replace(/[^a-zA-Z0-9\s]/g, '').trim() || '*';
     // Search using FTS5 match
     // We use snippet() to get relevant parts
     const { results } = await DB.prepare(`

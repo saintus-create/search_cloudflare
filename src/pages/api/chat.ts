@@ -3,7 +3,13 @@ import type { APIRoute } from 'astro';
 export const POST: APIRoute = async ({ request, locals }) => {
   const body = await request.json() as { message?: string };
   const { message } = body;
-  const { DB, AI } = locals.runtime.env;
+  const env = locals?.runtime?.env || {};
+  const DB = env.DB;
+  const AI = env.AI;
+
+  if (!DB) {
+    return new Response(JSON.stringify({ error: 'Database binding (DB) is missing.' }), { status: 500 });
+  }
 
   if (!message) {
     return new Response(JSON.stringify({ error: 'Message is required' }), { status: 400 });

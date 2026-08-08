@@ -13,5 +13,5 @@ binding = "KV"
 id = "5ad0544c0a9148fd8697bfb20a7e0c4a"
 preview_id = "5ad0544c0a9148fd8697bfb20a7e0c4a"
 
-
-\n[ai]\nbinding = "AI"
+[ai]
+binding = "AI"

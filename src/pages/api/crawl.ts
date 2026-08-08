@@ -4,7 +4,13 @@ export const POST: APIRoute = async ({ request, locals }) => {
   try {
     const body = await request.json() as { url?: string };
     const { url } = body;
-    const { DB, KV } = locals.runtime.env;
+    const env = locals?.runtime?.env || {};
+    const DB = env.DB;
+    const KV = env.KV;
+
+    if (!DB || !KV) {
+      return new Response(JSON.stringify({ error: 'Database or KV binding missing.' }), { status: 500 });
+    }
 
     if (!url) {
       return new Response(JSON.stringify({ error: 'URL is required' }), { status: 400 });
