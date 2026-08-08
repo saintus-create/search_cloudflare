@@ -145,12 +145,18 @@ import { Search, Send, Globe, Loader2, Bot } from '@lucide/astro';
 		let searchTimeout;
 		searchInput?.addEventListener('input', (e) => {
 			clearTimeout(searchTimeout);
+			
+			// Show a loading indicator in the results container
+			const q = e.target.value;
+			if (q.length >= 2) {
+				resultsContainer.classList.remove('hidden');
+				resultsList.innerHTML = '<p class="text-slate-400 italic animate-pulse">Searching...</p>';
+			} else {
+				resultsContainer.classList.add('hidden');
+			}
+
 			searchTimeout = setTimeout(async () => {
-				const q = e.target.value;
-				if (q.length < 2) {
-					resultsContainer.classList.add('hidden');
-					return;
-				}
+				if (q.length < 2) return;
 
 				try {
 					const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
