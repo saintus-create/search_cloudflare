@@ -1,8 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: [
-    './src/**/*.{astro,html,js,jsx,md,mdx,svelte,ts,tsx,vue}'
-  ],
+  content: ['./src/**/*.{astro,html,js,jsx,md,mdx,svelte,ts,tsx,vue}'],
   theme: { 
     extend: {
       fontFamily: {
@@ -21,43 +19,9 @@ export default {
           '0%, 100%': { opacity: 1 },
           '50%': { opacity: 0.5 },
         }
-      },
-      typography: (theme) => ({
-        DEFAULT: {
-          css: {
-            color: theme('colors.gray.700'),
-            fontSize: '1.05rem',
-            lineHeight: '1.75',
-            a: {
-              color: theme('colors.black'),
-              textDecorationThickness: '1px',
-              textUnderlineOffset: '4px',
-              fontWeight: '500',
-              transition: 'color 0.2s ease',
-              '&:hover': {
-                color: theme('colors.gray.500'),
-              },
-            },
-            strong: {
-              color: theme('colors.black'),
-              fontWeight: '600',
-            },
-            p: {
-              marginTop: '1.25em',
-              marginBottom: '1.25em',
-            },
-            blockquote: {
-              borderLeftColor: theme('colors.gray.200'),
-              color: theme('colors.gray.500'),
-              fontStyle: 'italic',
-              fontWeight: '300',
-            },
-          },
-        },
-      }),
+      }
     } 
   },
-  darkMode: "class",
   plugins: [
     require('@tailwindcss/typography')
   ],
