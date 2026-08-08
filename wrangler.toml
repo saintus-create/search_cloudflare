@@ -12,6 +12,3 @@ preview_database_id = "75f396d8-bade-4393-a269-31ee32b3e072"
 binding = "KV"
 id = "5ad0544c0a9148fd8697bfb20a7e0c4a"
 preview_id = "5ad0544c0a9148fd8697bfb20a7e0c4a"
-
-[ai]
-binding = "AI"

@@ -103,7 +103,7 @@ export default function HeroSearch() {
           placeholder="Ask a question, search documents, or enter a URL..."
           value={query}
           onValueChange={setQuery}
-          startContent={<Search className="text-gray-300 w-5 h-5 ml-2 mr-2 transition-colors duration-300 group-focus-within:text-black" />}
+          startContent={<Search className="text-gray-300 w-5 h-5 ml-2 mr-2 transition-colors duration-300 group-focus-within:gradient-icon" />}
           endContent={
             <Button 
               isIconOnly 
@@ -131,7 +131,7 @@ export default function HeroSearch() {
               <CardBody className="flex flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-5">
                   <div className="p-3.5 bg-white rounded-full shadow-sm border border-gray-100">
-                    <Globe className="w-6 h-6 text-black" />
+                    <Globe className="w-6 h-6 gradient-icon" />
                   </div>
                   <div>
                     <h3 className="font-medium text-gray-900 text-lg tracking-tight">External Link Detected</h3>
@@ -177,7 +177,7 @@ export default function HeroSearch() {
               className="space-y-4"
             >
               <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-black" />
+                <Sparkles className="w-4 h-4 gradient-icon" />
                 <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-[0.15em]">AI Synthesis</h2>
               </div>
               <div className="text-gray-800 font-light text-lg leading-relaxed prose prose-slate max-w-none min-h-[60px]">
