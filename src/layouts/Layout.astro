@@ -9,7 +9,7 @@ const { title } = Astro.props;
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="description" content="Unified AI Search Portal" />
@@ -18,10 +18,10 @@ const { title } = Astro.props;
 		<meta name="generator" content={Astro.generator} />
 		<title>{title}</title>
 	</head>
-	<body class="bg-white text-black min-h-screen relative font-sans selection:bg-black selection:text-white">
+	<body class="bg-white text-black min-h-screen relative font-sans selection:bg-black selection:text-white antialiased">
 		
-		<!-- SVG Definitions for Gradient Strokes -->
-		<svg width="0" height="0" class="absolute hidden">
+		<!-- Invisible SVG Definitions for Custom Icon Gradients -->
+		<svg aria-hidden="true" style="position: absolute; width: 0; height: 0;">
 		  <defs>
 		    <linearGradient id="icon-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
 		      <stop offset="0%" stop-color="#4f46e5" /> <!-- Indigo -->
@@ -31,22 +31,24 @@ const { title } = Astro.props;
 		  </defs>
 		</svg>
 
-		<!-- Subtle background texture -->
-		<div class="absolute inset-0 z-[-1] h-full w-full bg-white bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:24px_24px]"></div>
+		<!-- Masterfully faded background texture (vignette effect) -->
+		<div class="fixed inset-0 z-[-1] h-full w-full bg-white bg-[radial-gradient(#e5e7eb_1.5px,transparent_1.5px)] [background-size:24px_24px] [mask-image:radial-gradient(ellipse_70%_70%_at_50%_50%,#000_10%,transparent_100%)]"></div>
 		
-		<nav class="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-gray-100">
+		<nav class="sticky top-0 z-10 bg-white/70 backdrop-blur-xl border-b border-gray-100/50 transition-all">
 			<div class="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
-				<div class="flex items-center gap-2 font-bold text-xl tracking-tight">
+				<div class="flex items-center gap-2 font-semibold text-lg tracking-tight hover:opacity-80 transition-opacity cursor-pointer">
 					<Zap class="w-5 h-5 gradient-icon" />
 					<span>CloudSearch</span>
 				</div>
 			</div>
 		</nav>
-		<main class="max-w-4xl mx-auto px-6 py-16">
+		
+		<main class="max-w-4xl mx-auto px-6 py-20 lg:py-24">
 			<slot />
 		</main>
-		<footer class="mt-20 py-8 text-center text-gray-400 text-xs tracking-widest uppercase">
-			<p>Built with Astro & Cloudflare</p>
+		
+		<footer class="pb-12 text-center text-gray-400/80 text-[10px] tracking-[0.2em] uppercase font-medium">
+			<p>Engineered with Astro & Cloudflare</p>
 		</footer>
 	</body>
 </html>
@@ -56,7 +58,7 @@ const { title } = Astro.props;
 	@tailwind components;
 	@tailwind utilities;
 
-	/* Custom utility class to apply SVG gradient to stroke */
+	/* Elegant, non-intrusive gradient stroke application */
 	.gradient-icon {
 		stroke: url(#icon-gradient);
 	}
