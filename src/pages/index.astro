@@ -152,19 +152,26 @@ import { Search, Send, Globe, Loader2, Bot } from '@lucide/astro';
 					return;
 				}
 
-				const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
-				const { results } = await res.json();
+				try {
+					const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+					const data = await res.json();
+					const results = data.results || [];
 
-				resultsContainer.classList.remove('hidden');
-				resultsList.innerHTML = results.length > 0 
-					? results.map(r => `
-						<div class="p-4 bg-white border border-slate-100 rounded-xl hover:border-orange-200 transition-colors shadow-sm">
-							<a href="${r.url}" target="_blank" class="text-orange-600 font-medium hover:underline block mb-1">${r.title}</a>
-							<p class="text-sm text-slate-600">${r.snippet}</p>
-							<span class="text-xs text-slate-400 mt-2 block">${r.url}</span>
-						</div>
-					`).join('')
-					: '<p class="text-slate-500 italic">No results found.</p>';
+					resultsContainer.classList.remove('hidden');
+					resultsList.innerHTML = results.length > 0 
+						? results.map(r => `
+							<div class="p-4 bg-white border border-slate-100 rounded-xl hover:border-orange-200 transition-colors shadow-sm">
+								<a href="${r.url}" target="_blank" class="text-orange-600 font-medium hover:underline block mb-1">${r.title}</a>
+								<p class="text-sm text-slate-600">${r.snippet}</p>
+								<span class="text-xs text-slate-400 mt-2 block">${r.url}</span>
+							</div>
+						`).join('')
+						: '<p class="text-slate-500 italic">No results found.</p>';
+				} catch (err) {
+					console.error("Search failed:", err);
+					resultsContainer.classList.remove('hidden');
+					resultsList.innerHTML = '<p class="text-red-500 italic">An error occurred while searching.</p>';
+				}
 			}, 300);
 		});
 
