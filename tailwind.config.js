@@ -6,20 +6,35 @@ export default {
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
       },
-      animation: {
-        'fade-in-up': 'fadeInUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) both',
-        'pulse-subtle': 'pulseSubtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-      },
-      keyframes: {
-        fadeInUp: {
-          '0%': { opacity: 0, transform: 'translateY(16px)' },
-          '100%': { opacity: 1, transform: 'translateY(0)' },
+      typography: (theme) => ({
+        DEFAULT: {
+          css: {
+            color: '#1c1c1c',
+            fontSize: '1.25rem',
+            lineHeight: '1.8',
+            fontWeight: '500',
+            a: {
+              color: '#1c1c1c',
+              textDecorationThickness: '2px',
+              textUnderlineOffset: '6px',
+              fontWeight: '700',
+              transition: 'all 0.2s ease',
+              '&:hover': {
+                color: theme('colors.gray.500'),
+                textDecorationColor: theme('colors.gray.300'),
+              },
+            },
+            strong: {
+              color: '#1c1c1c',
+              fontWeight: '800',
+            },
+            p: {
+              marginTop: '1.5em',
+              marginBottom: '1.5em',
+            },
+          },
         },
-        pulseSubtle: {
-          '0%, 100%': { opacity: 1 },
-          '50%': { opacity: 0.5 },
-        }
-      }
+      }),
     } 
   },
   plugins: [

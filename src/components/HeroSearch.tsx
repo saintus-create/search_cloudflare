@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Plus, ArrowUp, Globe, Sparkles, Database, Loader2 } from "lucide-react";
+import { CornerDownLeft, Sparkle, Link as LinkIcon, Database, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function HeroSearch() {
@@ -65,7 +65,7 @@ export default function HeroSearch() {
 
   const handleCrawl = async () => {
     setStatus("loading");
-    setCrawlMessage("Extracting content...");
+    setCrawlMessage("Extracting intelligence...");
     try {
       const res = await fetch("/api/crawl", {
         method: "POST",
@@ -75,7 +75,7 @@ export default function HeroSearch() {
       const data = await res.json();
       if (data.success) {
         setStatus("success");
-        setCrawlMessage(`Indexed securely: ${data.title}`);
+        setCrawlMessage(`Ingested: ${data.title}`);
         setTimeout(() => {
           setQuery("");
           setMode("idle");
@@ -90,27 +90,21 @@ export default function HeroSearch() {
   };
 
   return (
-    <div className={`w-full flex flex-col items-center transition-all duration-700 ${mode === 'idle' ? 'mt-[15vh]' : 'mt-0'}`}>
-      <form onSubmit={handleSubmit} className="w-full max-w-[50rem] relative mb-16 group z-10">
-        {/* The Pill Search Bar matching the image exactly */}
-        <div className="relative flex items-center w-full bg-[#e3e3e3] rounded-full h-[4.5rem] px-2 transition-all duration-300 shadow-2xl">
-          <button type="button" className="w-14 h-14 flex items-center justify-center text-gray-500 hover:text-gray-800 transition-colors">
-            <Plus className="w-7 h-7 stroke-[2]" />
-          </button>
-          
+    <div className={`w-full flex flex-col items-center transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${mode === 'idle' ? 'mt-0' : '-mt-[20vh]'}`}>
+      <form onSubmit={handleSubmit} className="w-full max-w-[44rem] relative mb-20 z-10 group">
+        <div className="relative flex items-center w-full border-b-2 border-[#1c1c1c]/20 hover:border-[#1c1c1c] focus-within:!border-[#1c1c1c] transition-all duration-500 py-4">
           <input
-            className="flex-1 bg-transparent text-xl text-gray-900 placeholder:text-gray-500 font-medium outline-none mx-2 caret-blue-500"
-            placeholder=""
+            className="flex-1 bg-transparent text-2xl md:text-3xl text-[#1c1c1c] placeholder:text-[#1c1c1c]/30 font-medium tracking-tight outline-none"
+            placeholder="Query or ingest..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             autoFocus
           />
-          
           <button 
             type="submit"
-            className="w-14 h-14 flex items-center justify-center text-gray-500 hover:text-gray-800 transition-all active:scale-95"
+            className="w-12 h-12 flex items-center justify-center text-[#1c1c1c]/40 hover:text-[#1c1c1c] transition-all duration-300"
           >
-            <ArrowUp className="w-7 h-7 stroke-[2]" />
+            <CornerDownLeft className="w-6 h-6 stroke-[2.5]" />
           </button>
         </div>
       </form>
@@ -119,35 +113,33 @@ export default function HeroSearch() {
         {mode === "crawl" && (
           <motion.div 
             key="crawl"
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-            className="w-full max-w-2xl"
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            className="w-full max-w-[44rem]"
           >
-            <div className="border border-gray-800 shadow-lg bg-[#1e1f20] p-6 rounded-3xl flex flex-col sm:flex-row items-center justify-between gap-6">
-              <div className="flex items-center gap-5">
-                <div className="p-4 bg-gray-800 rounded-full shadow-sm border border-gray-700">
-                  <Globe className="w-6 h-6 text-blue-400" />
-                </div>
+            <div className="bg-[#f5f5f5] p-8 rounded-none border-l-4 border-[#1c1c1c] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-8">
+              <div className="flex items-center gap-6">
+                <LinkIcon className="w-6 h-6 text-[#1c1c1c]" />
                 <div>
-                  <h3 className="font-medium text-gray-100 text-lg tracking-tight">External Link Detected</h3>
-                  <p className="text-gray-400 text-sm font-light mt-0.5">Would you like to securely index this page?</p>
+                  <h3 className="font-semibold text-[#1c1c1c] text-lg tracking-tight uppercase">External Domain</h3>
+                  <p className="text-[#1c1c1c]/60 text-sm font-medium mt-1">Initiate ingestion protocol?</p>
                 </div>
               </div>
-              <div className="flex flex-col items-end gap-2">
+              <div className="flex flex-col items-start sm:items-end gap-3 w-full sm:w-auto">
                 {status !== "success" && (
                   <button 
                     onClick={handleCrawl}
                     disabled={status === "loading"}
-                    className="bg-blue-600 text-white font-medium px-6 py-2.5 rounded-full shadow-sm hover:bg-blue-500 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-70 disabled:active:scale-100"
+                    className="bg-[#1c1c1c] text-white font-semibold text-xs tracking-widest uppercase px-8 py-4 w-full sm:w-auto hover:bg-black active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-70 disabled:active:scale-100"
                   >
                     {status === "loading" && <Loader2 className="w-4 h-4 animate-spin" />}
-                    {status === "loading" ? "Indexing..." : "Index Link"}
+                    {status === "loading" ? "Ingesting" : "Execute"}
                   </button>
                 )}
                 {crawlMessage && (
-                  <p className={`text-sm font-medium ${status === "error" ? "text-red-400" : "text-gray-200"}`}>
+                  <p className={`text-xs font-semibold uppercase tracking-widest ${status === "error" ? "text-red-500" : "text-[#1c1c1c]"}`}>
                     {crawlMessage}
                   </p>
                 )}
@@ -159,27 +151,27 @@ export default function HeroSearch() {
         {mode === "search" && (
           <motion.div 
             key="search"
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            className="w-full max-w-[50rem] space-y-12 text-left pb-16"
+            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+            className="w-full max-w-[44rem] space-y-16 text-left pb-16"
           >
-            {/* Dark Mode AI Box */}
+            {/* Minimalist AI Synthesis */}
             <motion.div 
-              initial={{ opacity: 0, y: 15 }}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-              className="space-y-4 bg-[#1e1f20] p-8 rounded-[2rem] border border-gray-800 shadow-2xl"
+              transition={{ delay: 0.15, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              className="space-y-6"
             >
-              <div className="flex items-center gap-3 border-b border-gray-800 pb-5 mb-5">
-                <Sparkles className="w-5 h-5 text-blue-400" />
-                <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-widest">AI Synthesis</h2>
+              <div className="flex items-center gap-3">
+                <Sparkle className="w-4 h-4 text-[#1c1c1c]" />
+                <h2 className="text-[0.7rem] font-bold text-[#1c1c1c]/50 uppercase tracking-[0.2em]">Synthesis</h2>
               </div>
-              <div className="text-gray-300 font-light text-lg leading-relaxed prose prose-invert max-w-none min-h-[60px]">
+              <div className="text-[#1c1c1c] font-medium text-xl leading-relaxed prose prose-slate max-w-none min-h-[60px]">
                 {!aiAnswer ? (
-                  <div className="flex items-center gap-3 text-gray-500 italic">
-                    <Loader2 className="w-5 h-5 animate-spin text-blue-500" /> Synthesizing...
+                  <div className="flex items-center gap-4 text-[#1c1c1c]/40 italic font-light">
+                    <Loader2 className="w-5 h-5 animate-spin" /> Processing...
                   </div>
                 ) : (
                   <p dangerouslySetInnerHTML={{ __html: aiAnswer.replace(/\n/g, '<br/>') }} />
@@ -187,43 +179,43 @@ export default function HeroSearch() {
               </div>
             </motion.div>
 
-            {/* Dark Mode Sources */}
+            {/* Brutalist Sources List */}
             <motion.div 
-              initial={{ opacity: 0, y: 15 }}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.25, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-              className="space-y-6"
+              transition={{ delay: 0.3, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              className="space-y-8 pt-12 border-t border-[#1c1c1c]/10"
             >
-              <div className="flex items-center gap-2 mb-4 pl-2">
-                <Database className="w-4 h-4 text-gray-500" />
-                <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest">Sourced Documents</h2>
+              <div className="flex items-center gap-3 mb-2">
+                <Database className="w-4 h-4 text-[#1c1c1c]/40" />
+                <h2 className="text-[0.7rem] font-bold text-[#1c1c1c]/40 uppercase tracking-[0.2em]">Citations</h2>
               </div>
               
-              <div className="grid gap-4">
+              <div className="grid gap-0 divide-y divide-[#1c1c1c]/10">
                 {status === "loading" && sources.length === 0 ? (
-                  <div className="flex items-center gap-3 text-gray-500 font-light italic pl-2">
-                    <Loader2 className="w-4 h-4 animate-spin text-blue-500" /> Retrieving documents...
+                  <div className="flex items-center gap-4 text-[#1c1c1c]/40 font-light italic py-6">
+                    <Loader2 className="w-4 h-4 animate-spin" /> Locating records...
                   </div>
                 ) : sources.length > 0 ? (
                   sources.map((src, i) => (
                     <motion.div 
                       key={i} 
-                      initial={{ opacity: 0, y: 10 }} 
-                      animate={{ opacity: 1, y: 0 }} 
-                      transition={{ delay: 0.3 + (i * 0.1), duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                      className="group cursor-pointer block bg-[#1e1f20] p-6 rounded-2xl border border-gray-800 hover:border-gray-600 transition-colors shadow-lg"
+                      initial={{ opacity: 0, x: -10 }} 
+                      animate={{ opacity: 1, x: 0 }} 
+                      transition={{ delay: 0.4 + (i * 0.1), duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                      className="group block py-8 hover:px-4 hover:bg-[#f5f5f5] transition-all duration-300 -mx-4 px-4 cursor-pointer"
                     >
-                      <a href={src.url} target="_blank" rel="noopener noreferrer" className="text-blue-400 font-medium group-hover:text-blue-300 transition-colors block mb-2 text-xl tracking-tight">
+                      <a href={src.url} target="_blank" rel="noopener noreferrer" className="text-[#1c1c1c] font-semibold block mb-3 text-2xl tracking-tight">
                         {src.title}
                       </a>
-                      <p className="text-[1rem] text-gray-400 font-light leading-relaxed mb-4">{src.snippet.replace(/<\/?b>/g, '')}</p>
-                      <span className="text-[0.7rem] text-gray-500 flex items-center gap-1.5 uppercase tracking-widest font-medium">
+                      <p className="text-[1.05rem] text-[#1c1c1c]/70 font-light leading-relaxed mb-4">{src.snippet.replace(/<\/?b>/g, '')}</p>
+                      <span className="text-[0.65rem] text-[#1c1c1c]/40 flex items-center gap-2 uppercase tracking-[0.15em] font-bold">
                         {src.url}
                       </span>
                     </motion.div>
                   ))
                 ) : (
-                  <p className="text-gray-500 italic font-light pl-2">No matching documents found.</p>
+                  <p className="text-[#1c1c1c]/40 italic font-light py-6">No matching records found.</p>
                 )}
               </div>
             </motion.div>

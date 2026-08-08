@@ -1,5 +1,5 @@
 ---
-import { Home, Sparkles } from '@lucide/astro';
+import { Search } from '@lucide/astro';
 
 interface Props {
 	title: string;
@@ -9,7 +9,7 @@ const { title } = Astro.props;
 ---
 
 <!doctype html>
-<html lang="en" class="scroll-smooth dark">
+<html lang="en" class="scroll-smooth">
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="description" content="Unified AI Search Portal" />
@@ -18,26 +18,22 @@ const { title } = Astro.props;
 		<meta name="generator" content={Astro.generator} />
 		<title>{title}</title>
 	</head>
-	<body class="bg-[#131314] text-gray-100 min-h-screen relative font-sans selection:bg-blue-500 selection:text-white antialiased flex flex-col">
+	<body class="bg-[#Fdfdfc] text-[#1c1c1c] min-h-screen relative font-sans selection:bg-[#1c1c1c] selection:text-[#Fdfdfc] antialiased flex flex-col">
 		
-		<!-- Masterfully faded dark background texture (vignette effect) -->
-		<div class="fixed inset-0 z-[-1] h-full w-full bg-[#131314] bg-[radial-gradient(#2a2b2c_1.5px,transparent_1.5px)] [background-size:24px_24px] [mask-image:radial-gradient(ellipse_70%_70%_at_50%_50%,#000_10%,transparent_100%)]"></div>
+		<!-- Distinct, bespoke architectural grid -->
+		<div class="fixed inset-0 z-[-1] h-full w-full bg-[#Fdfdfc] bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
 		
-		<!-- Top Right Home Button (From Reference Image) -->
-		<div class="fixed top-8 right-8 z-50">
-			<a href="/" class="w-16 h-16 bg-[#3b82f6] hover:bg-[#60a5fa] text-[#0f172a] rounded-full flex items-center justify-center shadow-lg transition-transform active:scale-95">
-				<Home class="w-8 h-8" />
-			</a>
-		</div>
+		<nav class="absolute top-0 w-full z-10 p-8 flex items-center justify-between pointer-events-none">
+			<div class="flex items-center gap-3 font-semibold text-[0.8rem] tracking-[0.2em] uppercase text-[#1c1c1c]">
+				<div class="w-2 h-2 bg-[#1c1c1c] rounded-full"></div>
+				<span>Nexus</span>
+			</div>
+		</nav>
 
-		<main class="flex-1 w-full max-w-5xl mx-auto px-6 py-12 flex flex-col">
+		<main class="flex-1 w-full max-w-5xl mx-auto px-6 py-12 flex flex-col justify-center">
 			<slot />
 		</main>
 		
-		<!-- Bottom Right Sparkle (From Reference Image) -->
-		<div class="fixed bottom-10 right-10 z-0 opacity-40">
-			<Sparkles class="w-8 h-8 text-gray-400" />
-		</div>
 	</body>
 </html>
 
