@@ -15,7 +15,6 @@
     "@astrojs/react": "^5.0.0",
     "@astrojs/tailwind": "^6.0.2",
     "@lucide/astro": "latest",
-    "@nextui-org/react": "^2.6.11",
     "@tailwindcss/typography": "^0.5.20",
     "astro": "^5.0.0",
     "firecrawl": "latest",
