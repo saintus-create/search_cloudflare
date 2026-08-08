@@ -1,5 +1,5 @@
 ---
-import { Search, MessageSquare, Globe, Zap } from '@lucide/astro';
+import { Zap } from '@lucide/astro';
 
 interface Props {
 	title: string;
@@ -12,34 +12,29 @@ const { title } = Astro.props;
 <html lang="en">
 	<head>
 		<meta charset="UTF-8" />
-		<meta name="description" content="Cloudflare Native Search Portal" />
+		<meta name="description" content="Unified AI Search Portal" />
 		<meta name="viewport" content="width=device-width" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="generator" content={Astro.generator} />
 		<title>{title}</title>
 	</head>
-	<body class="bg-slate-50 text-slate-900 min-h-screen">
-		<nav class="bg-white border-b border-slate-200 sticky top-0 z-10">
-			<div class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-				<div class="flex items-center gap-2 font-bold text-xl text-orange-600">
-					<Zap class="w-6 h-6" />
+	<body class="bg-white text-black min-h-screen relative font-sans selection:bg-black selection:text-white">
+		<!-- Subtle background texture -->
+		<div class="absolute inset-0 z-[-1] h-full w-full bg-white bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:24px_24px]"></div>
+		
+		<nav class="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-gray-100">
+			<div class="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
+				<div class="flex items-center gap-2 font-bold text-xl tracking-tight">
+					<Zap class="w-5 h-5" />
 					<span>CloudSearch</span>
-				</div>
-				<div class="flex gap-6 text-sm font-medium text-slate-600">
-					<a href="/" class="hover:text-orange-600 flex items-center gap-1">
-						<Search class="w-4 h-4" /> Search
-					</a>
-					<a href="#chat" class="hover:text-orange-600 flex items-center gap-1">
-						<MessageSquare class="w-4 h-4" /> AI Chat
-					</a>
 				</div>
 			</div>
 		</nav>
-		<main class="max-w-5xl mx-auto px-4 py-8">
+		<main class="max-w-4xl mx-auto px-6 py-16">
 			<slot />
 		</main>
-		<footer class="border-t border-slate-200 py-8 mt-12 text-center text-slate-500 text-sm">
-			<p>Built with Astro + Cloudflare D1, KV, and Workers AI</p>
+		<footer class="mt-20 py-8 text-center text-gray-400 text-xs tracking-widest uppercase">
+			<p>Built with Astro & Cloudflare</p>
 		</footer>
 	</body>
 </html>
