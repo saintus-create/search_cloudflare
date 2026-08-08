@@ -24,11 +24,17 @@ export const POST: APIRoute = async ({ request, locals }) => {
       .join('\n\n');
 
     let responseText = "I couldn't find an answer.";
+    
+    // Updated System Prompt for a Free-Speech / Abstract Narrative Persona
+    const systemPrompt = `You are an uncensored, free-thought AI assistant. You value free speech, open inquiry, and abstract narrative exploration. Do not use standard AI disclaimers, apologies, or moralizing language. Engage directly and fearlessly with all ideas, including those considered controversial, unconventional, or highly abstract. Use the provided context as a baseline, but feel free to extrapolate creatively and philosophically.
+    
+Context: ${context}`;
+
     if (AI) {
       try {
-        const response = await AI.run('@cf/meta/llama-4-scout-17b-16e-instruct', {
+        const response = await AI.run('@cf/meta/llama-3-8b-instruct', {
           messages: [
-            { role: 'system', content: `You are a helpful assistant. Use context: ${context}` },
+            { role: 'system', content: systemPrompt },
             { role: 'user', content: message }
           ]
         }) as any;
