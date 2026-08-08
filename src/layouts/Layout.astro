@@ -19,13 +19,25 @@ const { title } = Astro.props;
 		<title>{title}</title>
 	</head>
 	<body class="bg-white text-black min-h-screen relative font-sans selection:bg-black selection:text-white">
+		
+		<!-- SVG Definitions for Gradient Strokes -->
+		<svg width="0" height="0" class="absolute hidden">
+		  <defs>
+		    <linearGradient id="icon-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+		      <stop offset="0%" stop-color="#4f46e5" /> <!-- Indigo -->
+		      <stop offset="50%" stop-color="#ec4899" /> <!-- Pink -->
+		      <stop offset="100%" stop-color="#f97316" /> <!-- Orange -->
+		    </linearGradient>
+		  </defs>
+		</svg>
+
 		<!-- Subtle background texture -->
 		<div class="absolute inset-0 z-[-1] h-full w-full bg-white bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:24px_24px]"></div>
 		
 		<nav class="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-gray-100">
 			<div class="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
 				<div class="flex items-center gap-2 font-bold text-xl tracking-tight">
-					<Zap class="w-5 h-5" />
+					<Zap class="w-5 h-5 gradient-icon" />
 					<span>CloudSearch</span>
 				</div>
 			</div>
@@ -43,4 +55,12 @@ const { title } = Astro.props;
 	@tailwind base;
 	@tailwind components;
 	@tailwind utilities;
+
+	/* Custom utility class to apply SVG gradient to stroke */
+	.gradient-icon {
+		stroke: url(#icon-gradient);
+	}
+	.group:focus-within .group-focus-within\:gradient-icon {
+		stroke: url(#icon-gradient);
+	}
 </style>
