@@ -10,6 +10,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
   }
 
   try {
+    // Make query safe for FTS5 by stripping non-alphanumeric chars
+    const safeQuery = message.replace(/[^a-zA-Z0-9\s]/g, '').trim() || '*';
+    
     const { results: contextResults } = await DB.prepare(`
       SELECT d.content, d.title, d.url
       FROM documents d
@@ -17,7 +20,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       WHERE documents_fts MATCH ?
       ORDER BY rank
       LIMIT 3
-    `).bind(message).all() as { results: any[] };
+    `).bind(safeQuery).all() as { results: any[] };
 
     const context = contextResults
       .map((r: any) => `Source: ${r.title} (${r.url})\nContent: ${r.content}`)
