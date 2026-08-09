@@ -16,8 +16,8 @@ const { title } = Astro.props;
 		<meta name="generator" content={Astro.generator} />
 		<title>{title}</title>
 	</head>
-	<body class="bg-[#dcdcdb] text-black min-h-[100dvh] relative font-sans selection:bg-black selection:text-white antialiased overflow-x-hidden">
-		<main class="w-full min-h-[100dvh] bg-[#ebebeb] relative shadow-2xl flex flex-col items-center">
+	<body class="bg-[#ebebeb] md:bg-[#dcdcdb] text-black min-h-[100dvh] relative font-sans selection:bg-black selection:text-white antialiased overflow-x-hidden">
+		<main class="w-full min-h-[100dvh] bg-[#ebebeb] relative md:shadow-2xl flex flex-col items-center mx-auto max-w-[440px] md:max-w-none">
 			
 			<!-- Elegant white circular glow in center -->
 			<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-white rounded-full opacity-60 filter blur-3xl pointer-events-none z-0"></div>
@@ -32,7 +32,7 @@ const { title } = Astro.props;
 			</div>
 
 			<!-- Floating circular action buttons in bottom right -->
-			<div class="fixed bottom-12 right-12 flex flex-col gap-4 z-50">
+			<div class="fixed bottom-12 right-12 flex flex-col gap-4 z-50 hidden md:flex">
 				<button class="w-14 h-14 bg-[#e3e3e3] rounded-3xl flex items-center justify-center hover:bg-white transition-colors shadow-sm">
 					<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"></path><path d="M9 21H3v-6"></path><path d="M21 3l-7 7"></path><path d="M3 21l7-7"></path></svg>
 				</button>
@@ -41,7 +41,7 @@ const { title } = Astro.props;
 				</button>
 			</div>
 
-			<!-- Inner "phone" frame constraint to perfectly mimic the image aspect ratio on desktop -->
+			<!-- Inner "phone" frame constraint -->
 			<div class="w-full max-w-[440px] flex-1 relative z-10 flex flex-col">
 				<slot />
 			</div>
