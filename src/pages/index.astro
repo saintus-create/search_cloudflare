@@ -59,15 +59,21 @@ import { Search, Send, Globe, Loader2, Database, Sparkles, ChevronDown, Mic } fr
 		
 				{/* Search UI */}
 				<div id="search-view" class="hidden space-y-8">
+					
+					{/* Header */}
+					<div class="w-full flex items-center justify-between border-b border-white/10 pb-4 mb-2">
+						<p class="text-[0.65rem] text-white/50 uppercase tracking-widest font-bold">Synthesis</p>
+						<p id="search-echo" class="text-[0.65rem] text-white/50 lowercase tracking-wider"></p>
+					</div>
+
 					<div class="space-y-3">
-						<p class="text-xs text-gray-500 uppercase tracking-widest font-semibold mb-4">Synthesis</p>
-						<div id="ai-response" class="text-lg font-light leading-relaxed text-gray-200">
+						<div id="ai-response" class="text-base font-medium leading-relaxed text-white">
 							<span class="animate-pulse text-gray-500">Processing inquiry...</span>
 						</div>
 					</div>
 		
 					<div class="space-y-4 pt-6 border-t border-gray-800">
-						<p class="text-xs text-gray-500 uppercase tracking-widest font-semibold mb-4">Citations</p>
+						<p class="text-[0.65rem] text-white/50 uppercase tracking-widest font-bold mb-4">Citations</p>
 						
 						<div id="citations-list">
 							<span class="animate-pulse text-gray-500">Locating...</span>
@@ -91,6 +97,7 @@ import { Search, Send, Globe, Loader2, Database, Sparkles, ChevronDown, Mic } fr
 	const crawlHeading = document.getElementById('crawl-heading');
 	const aiResponse = document.getElementById('ai-response');
 	const citationsList = document.getElementById('citations-list');
+	const searchEcho = document.getElementById('search-echo');
 
 	const isUrl = (text: string) => {
 		try {
@@ -195,6 +202,8 @@ import { Search, Send, Globe, Loader2, Database, Sparkles, ChevronDown, Mic } fr
 			crawlView?.classList.remove('flex');
 			searchView?.classList.remove('hidden');
 
+			if (searchEcho) searchEcho.textContent = query;
+
 			if (aiResponse) {
 				aiResponse.innerHTML = '<span class="animate-pulse text-gray-500">Processing inquiry...</span>';
 			}
@@ -233,10 +242,10 @@ import { Search, Send, Globe, Loader2, Database, Sparkles, ChevronDown, Mic } fr
 						if (sources.length > 0) {
 							citationsList.innerHTML = sources.map((src: any, i: number) => `
 								<div class="block mb-6 cursor-pointer group animate-fade-in-up" style="animation-delay: ${i * 100}ms; opacity: 0; animation-fill-mode: forwards;">
-									<a href="${src.url}" target="_blank" rel="noopener noreferrer" class="text-white font-bold text-xl block mb-1 group-hover:text-gray-300 transition-colors">
+									<a href="${src.url}" target="_blank" rel="noopener noreferrer" class="text-white font-bold text-sm block mb-1 group-hover:text-white/70 transition-colors">
 										${src.title}
 									</a>
-									<p class="text-sm text-gray-400 line-clamp-2">${src.snippet.replace(/<\/?b>/g, '')}</p>
+									<p class="text-xs text-white/50 line-clamp-2 leading-relaxed">${src.snippet.replace(/<\/?b>/g, '')}</p>
 								</div>
 							`).join('');
 						} else {
