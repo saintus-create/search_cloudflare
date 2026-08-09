@@ -18,5 +18,3 @@ binding = "SESSION"
 id = "session_mock_id_123"
 preview_id = "session_mock_id_123"
 
-[ai]
-binding = "AI"

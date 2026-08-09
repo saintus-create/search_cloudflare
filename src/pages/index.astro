@@ -1,24 +1,262 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import HeroSearch from '../components/HeroSearch';
+import { Search, Send, Globe, Loader2, Database, Sparkles, ChevronDown, Mic } from 'lucide-react';
 ---
 
-<Layout title="wikipedia">
-	<div class="flex flex-col w-full h-full min-h-[100dvh] pt-12 relative">
-		
+<Layout title="CloudSearch - Minimalist">
+	<div class="flex flex-col w-full min-h-[100dvh] pt-12">
 		<!-- Header (Logo & Menu) -->
-		<div class="w-full px-8 flex items-center justify-between z-20">
-			<!-- Two horizontal bars -->
-			<div class="flex flex-col gap-1.5 cursor-pointer">
-				<div class="w-5 h-[2px] bg-black"></div>
-				<div class="w-5 h-[2px] bg-black"></div>
-			</div>
-			<!-- Logo -->
-			<div class="font-bold text-lg tracking-tighter">wikipedia</div>
+		<div class="w-full px-8 flex items-center justify-between z-10 relative">
+			<div class="w-6 h-[2px] bg-black relative before:absolute before:w-6 before:h-[2px] before:bg-black before:-top-2 after:absolute after:w-6 after:h-[2px] after:bg-black after:top-2"></div>
+			<div class="font-bold text-xl tracking-tighter lowercase">cloudsearch</div>
 		</div>
 
-		<!-- Search Component -->
-		<HeroSearch client:load />
-
+		<!-- Vanilla Web Components Hero Search -->
+		<div class="w-full h-full flex flex-col relative mt-[25vh]" id="hero-search-container">
+      
+			{/* Top Search Controls matching reference exactly */}
+			<div class="w-full px-8 flex items-end justify-between mb-2">
+				<div class="flex items-center gap-1 font-semibold text-sm cursor-pointer">
+					english <svg class="w-4 h-4 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+				</div>
+				<div class="flex items-center gap-4 text-gray-300">
+					<svg class="w-5 h-5 cursor-pointer hover:text-gray-500 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+					<svg class="w-5 h-5 cursor-pointer hover:text-gray-500 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+				</div>
+			</div>
+		
+			<form id="hero-form" class="w-full px-8 relative z-10">
+				<div class="relative flex items-center w-full">
+					<div class="absolute left-0 w-[2px] h-10 bg-black animate-pulse"></div>
+					<input
+						id="hero-input"
+						class="w-full bg-transparent text-5xl md:text-6xl text-black placeholder:text-[#e0e0e0] font-bold tracking-tight outline-none pl-4"
+						placeholder="Search"
+						autocomplete="off"
+						autofocus
+					/>
+				</div>
+				
+				<p id="hero-placeholder-text" class="mt-16 text-gray-400 text-sm font-medium pl-4 transition-opacity duration-300">
+					Type what you are looking for...
+				</p>
+			</form>
+		
+			{/* Decorative large circle background (from reference) */}
+			<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[30rem] h-[30rem] bg-white rounded-full opacity-60 z-0 pointer-events-none filter blur-2xl"></div>
+		
+			{/* Bottom Black Results Panel (from reference history box) */}
+			<div id="results-panel" class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-xl h-[55vh] bg-black text-white rounded-t-3xl p-8 overflow-y-auto hide-scrollbar z-50 shadow-2xl transition-transform duration-500 ease-[cubic-bezier(0,0,0.2,1)] translate-y-full hidden">
+				
+				{/* Crawl UI */}
+				<div id="crawl-view" class="hidden flex-col items-center justify-center h-full text-center space-y-4">
+					<div id="crawl-icon-container">
+						<svg id="crawl-icon" class="w-12 h-12 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>
+					</div>
+					<h3 class="text-xl font-bold" id="crawl-heading">Indexing URL</h3>
+					<p class="text-gray-400" id="crawl-message">Extracting content...</p>
+				</div>
+		
+				{/* Search UI */}
+				<div id="search-view" class="hidden space-y-8">
+					<div class="space-y-3">
+						<p class="text-xs text-gray-500 uppercase tracking-widest font-semibold mb-4">Synthesis</p>
+						<div id="ai-response" class="text-lg font-light leading-relaxed text-gray-200">
+							<span class="animate-pulse text-gray-500">Processing inquiry...</span>
+						</div>
+					</div>
+		
+					<div class="space-y-4 pt-6 border-t border-gray-800">
+						<p class="text-xs text-gray-500 uppercase tracking-widest font-semibold mb-4">Citations</p>
+						
+						<div id="citations-list">
+							<span class="animate-pulse text-gray-500">Locating...</span>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
 	</div>
 </Layout>
+
+<script>
+	const form = document.getElementById('hero-form');
+	const input = document.getElementById('hero-input') as HTMLInputElement;
+	const placeholderText = document.getElementById('hero-placeholder-text');
+	const resultsPanel = document.getElementById('results-panel');
+	const crawlView = document.getElementById('crawl-view');
+	const searchView = document.getElementById('search-view');
+	const crawlIcon = document.getElementById('crawl-icon');
+	const crawlMessage = document.getElementById('crawl-message');
+	const crawlHeading = document.getElementById('crawl-heading');
+	const aiResponse = document.getElementById('ai-response');
+	const citationsList = document.getElementById('citations-list');
+
+	const isUrl = (text: string) => {
+		try {
+			const url = new URL(text);
+			return url.protocol === "http:" || url.protocol === "https:";
+		} catch {
+			return false;
+		}
+	};
+
+	let isPanelOpen = false;
+
+	const closePanel = () => {
+		if (resultsPanel) {
+			resultsPanel.style.transform = 'translateY(100%)';
+			setTimeout(() => {
+				resultsPanel.classList.add('hidden');
+			}, 500);
+			isPanelOpen = false;
+		}
+	};
+
+	const openPanel = () => {
+		if (resultsPanel && !isPanelOpen) {
+			resultsPanel.classList.remove('hidden');
+			// Force reflow
+			void resultsPanel.offsetWidth;
+			resultsPanel.style.transform = 'translateY(0)';
+			isPanelOpen = true;
+		}
+	};
+
+	// Reset panel state on input
+	input?.addEventListener('input', (e) => {
+		if (placeholderText) {
+			if ((e.target as HTMLInputElement).value.length > 0) {
+				placeholderText.style.opacity = '0';
+			} else {
+				placeholderText.style.opacity = '1';
+			}
+		}
+		if (isPanelOpen) closePanel();
+	});
+
+	form?.addEventListener('submit', async (e) => {
+		e.preventDefault();
+		const query = input.value.trim();
+		if (!query) return;
+
+		openPanel();
+
+		if (isUrl(query)) {
+			searchView?.classList.add('hidden');
+			crawlView?.classList.remove('hidden');
+			crawlView?.classList.add('flex');
+			
+			if (crawlIcon) {
+				crawlIcon.classList.add('animate-pulse');
+				crawlIcon.classList.remove('text-red-500');
+				crawlIcon.classList.add('text-white');
+			}
+			if (crawlHeading) crawlHeading.textContent = 'Indexing URL';
+			if (crawlMessage) crawlMessage.textContent = 'Extracting content...';
+
+			try {
+				const res = await fetch("/api/crawl", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ url: query }),
+				});
+				const data = await res.json();
+				
+				if (crawlIcon) crawlIcon.classList.remove('animate-pulse');
+
+				if (data.success) {
+					if (crawlMessage) crawlMessage.textContent = 'Indexed successfully';
+					setTimeout(() => {
+						input.value = '';
+						if (placeholderText) placeholderText.style.opacity = '1';
+						closePanel();
+					}, 2000);
+				} else {
+					if (crawlIcon) {
+						crawlIcon.classList.add('text-red-500');
+						crawlIcon.classList.remove('text-white');
+					}
+					if (crawlHeading) crawlHeading.textContent = 'Failed to index';
+					if (crawlMessage) crawlMessage.textContent = data.error || 'Unknown error';
+				}
+			} catch (err: any) {
+				if (crawlIcon) {
+					crawlIcon.classList.remove('animate-pulse');
+					crawlIcon.classList.add('text-red-500');
+					crawlIcon.classList.remove('text-white');
+				}
+				if (crawlHeading) crawlHeading.textContent = 'Failed to index';
+				if (crawlMessage) crawlMessage.textContent = err.message || 'Unknown error';
+			}
+			
+		} else {
+			crawlView?.classList.add('hidden');
+			crawlView?.classList.remove('flex');
+			searchView?.classList.remove('hidden');
+
+			if (aiResponse) {
+				aiResponse.innerHTML = '<span class="animate-pulse text-gray-500">Processing inquiry...</span>';
+			}
+			if (citationsList) {
+				citationsList.innerHTML = '<span class="animate-pulse text-gray-500">Locating...</span>';
+			}
+
+			// Fetch AI
+			fetch("/api/chat", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ message: query }),
+			})
+				.then((res) => res.json())
+				.then((data) => {
+					if (aiResponse) {
+						if (data.answer) {
+							aiResponse.innerHTML = `<p>${data.answer.replace(/\n/g, '<br/>')}</p>`;
+						} else {
+							aiResponse.innerHTML = '<span class="text-gray-500">No response generated.</span>';
+						}
+					}
+				})
+				.catch((err) => {
+					if (aiResponse) {
+						aiResponse.innerHTML = `<span class="text-red-500">Processing error: ${err.message}</span>`;
+					}
+				});
+
+			// Fetch Search
+			fetch(`/api/search?q=${encodeURIComponent(query)}`)
+				.then((res) => res.json())
+				.then((data) => {
+					if (citationsList) {
+						const sources = data.results || [];
+						if (sources.length > 0) {
+							citationsList.innerHTML = sources.map((src: any, i: number) => `
+								<div class="block mb-6 cursor-pointer group animate-fade-in-up" style="animation-delay: ${i * 100}ms; opacity: 0; animation-fill-mode: forwards;">
+									<a href="${src.url}" target="_blank" rel="noopener noreferrer" class="text-white font-bold text-xl block mb-1 group-hover:text-gray-300 transition-colors">
+										${src.title}
+									</a>
+									<p class="text-sm text-gray-400 line-clamp-2">${src.snippet.replace(/<\/?b>/g, '')}</p>
+								</div>
+							`).join('');
+						} else {
+							citationsList.innerHTML = '<p class="text-gray-500 italic">No matching records.</p>';
+						}
+					}
+				})
+				.catch((err) => {
+					if (citationsList) {
+						citationsList.innerHTML = `<p class="text-red-500">Failed to load citations.</p>`;
+					}
+				});
+		}
+	});
+
+	// Dismiss panel if clicking outside the form and panel
+	document.addEventListener('click', (e) => {
+		const target = e.target as HTMLElement;
+		if (isPanelOpen && !resultsPanel?.contains(target) && !form?.contains(target)) {
+			closePanel();
+		}
+	});
+</script>

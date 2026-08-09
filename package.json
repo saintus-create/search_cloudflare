@@ -12,16 +12,11 @@
   },
   "dependencies": {
     "@astrojs/cloudflare": "^12.0.0",
-    "@astrojs/react": "^5.0.0",
     "@astrojs/tailwind": "^6.0.2",
     "@lucide/astro": "latest",
     "@tailwindcss/typography": "^0.5.20",
     "astro": "^5.18.2",
     "firecrawl": "latest",
-    "framer-motion": "^13.0.0",
-    "lucide-react": "^1.30.0",
-    "react": "^19.2.8",
-    "react-dom": "^19.2.8",
     "vite": "^6.0.11"
   },
   "devDependencies": {
