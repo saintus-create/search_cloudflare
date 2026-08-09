@@ -1,9 +1,13 @@
 import type { APIRoute } from 'astro';
 
 export const GET: APIRoute = async ({ locals }) => {
-  const { DB } = locals.runtime.env;
-
   try {
+    const env = locals?.runtime?.env || {};
+    const DB = env.DB;
+    if (!DB) {
+      throw new Error("Missing DB binding");
+    }
+
     const { results: sections } = await DB.prepare('SELECT COUNT(*) as count FROM sections').all() as any;
     const { results: documents } = await DB.prepare('SELECT COUNT(*) as count FROM documents').all() as any;
     
@@ -17,7 +21,7 @@ export const GET: APIRoute = async ({ locals }) => {
       ok: true, 
       sections: 0, 
       documents: 0, 
-      note: 'Database not fully initialized' 
+      note: 'Database not fully initialized or missing binding' 
     }));
   }
 };

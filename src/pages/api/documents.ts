@@ -1,10 +1,19 @@
 import type { APIRoute } from 'astro';
 
 export const GET: APIRoute = async ({ url, locals }) => {
-  const q = url.searchParams.get('q') ?? '';
-  const { DB } = locals.runtime.env;
-
   try {
+    const env = locals?.runtime?.env || {};
+    const DB = env.DB;
+    if (!DB) {
+      return new Response(JSON.stringify({ results: [], error: "Missing DB binding" }));
+    }
+
+    const q = url.searchParams.get('q') ?? '';
+
+    // Explicitly secure the FTS5 MATCH parameter
+    const safeQuery = q.replace(/[^a-zA-Z0-9\s]/g, '').trim();
+    const ftsQuery = safeQuery ? `"${safeQuery}"*` : '*';
+
     const { results } = await DB.prepare(`
       SELECT 
         d.id, 
@@ -17,11 +26,11 @@ export const GET: APIRoute = async ({ url, locals }) => {
       ORDER BY rank
       LIMIT 10
     `)
-      .bind(q)
+      .bind(ftsQuery)
       .all();
 
     return new Response(JSON.stringify({ results: results ?? [] }));
   } catch (error: any) {
-    return new Response(JSON.stringify({ results: [], error: null }), { status: 200 });
+    return new Response(JSON.stringify({ results: [], error: error.message }), { status: 500 });
   }
 };

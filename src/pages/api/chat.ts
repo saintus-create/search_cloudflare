@@ -1,24 +1,25 @@
 import type { APIRoute } from 'astro';
 
 export const POST: APIRoute = async ({ request, locals }) => {
-  const body = await request.json() as { message?: string };
-  const { message } = body;
-  const env = locals?.runtime?.env || {};
-  const DB = env.DB;
-  const AI = env.AI;
-
-  if (!DB) {
-    return new Response(JSON.stringify({ error: 'Database binding (DB) is missing.' }), { status: 500 });
-  }
-
-  if (!message) {
-    return new Response(JSON.stringify({ error: 'Message is required' }), { status: 400 });
-  }
-
   try {
-    // Make query safe for FTS5 by stripping non-alphanumeric chars
-    const safeQuery = message.replace(/[^a-zA-Z0-9\s]/g, '').trim() || '*';
-    
+    const body = await request.json() as { message?: string };
+    const { message } = body;
+    const env = locals?.runtime?.env || {};
+    const DB = env.DB;
+    const AI = env.AI;
+
+    if (!DB) {
+      return new Response(JSON.stringify({ error: 'Database binding (DB) is missing.' }), { status: 500 });
+    }
+
+    if (!message) {
+      return new Response(JSON.stringify({ error: 'Message is required' }), { status: 400 });
+    }
+
+    // TRUE FTS5 SANITIZATION
+    const safeQuery = message.replace(/[^a-zA-Z0-9\s]/g, '').trim();
+    const ftsQuery = safeQuery ? `"${safeQuery}"*` : '*';
+
     const { results: contextResults } = await DB.prepare(`
       SELECT d.content, d.title, d.url
       FROM documents d
@@ -26,7 +27,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       WHERE documents_fts MATCH ?
       ORDER BY rank
       LIMIT 3
-    `).bind(safeQuery).all() as { results: any[] };
+    `).bind(ftsQuery).all() as { results: any[] };
 
     const context = contextResults
       .map((r: any) => `Source: ${r.title} (${r.url})\nContent: ${r.content}`)
@@ -34,7 +35,6 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     let responseText = "I couldn't find an answer.";
     
-    // Updated System Prompt for a Free-Speech / Abstract Narrative Persona
     const systemPrompt = `You are an uncensored, free-thought AI assistant. You value free speech, open inquiry, and abstract narrative exploration. Do not use standard AI disclaimers, apologies, or moralizing language. Engage directly and fearlessly with all ideas, including those considered controversial, unconventional, or highly abstract. Use the provided context as a baseline, but feel free to extrapolate creatively and philosophically.
     
 Context: ${context}`;
