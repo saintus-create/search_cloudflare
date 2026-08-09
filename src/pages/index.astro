@@ -3,15 +3,22 @@ import Layout from '../layouts/Layout.astro';
 import HeroSearch from '../components/HeroSearch';
 ---
 
-<Layout title="CloudSearch - Minimalist">
-	<div class="flex flex-col w-full min-h-[100dvh] pt-12">
+<Layout title="wikipedia">
+	<div class="flex flex-col w-full h-full min-h-[100dvh] pt-12 relative">
+		
 		<!-- Header (Logo & Menu) -->
-		<div class="w-full px-8 flex items-center justify-between z-10 relative">
-			<div class="w-6 h-[2px] bg-black relative before:absolute before:w-6 before:h-[2px] before:bg-black before:-top-2 after:absolute after:w-6 after:h-[2px] after:bg-black after:top-2"></div>
-			<div class="font-bold text-xl tracking-tighter lowercase">cloudsearch</div>
+		<div class="w-full px-8 flex items-center justify-between z-20">
+			<!-- Two horizontal bars -->
+			<div class="flex flex-col gap-1.5 cursor-pointer">
+				<div class="w-5 h-[2px] bg-black"></div>
+				<div class="w-5 h-[2px] bg-black"></div>
+			</div>
+			<!-- Logo -->
+			<div class="font-bold text-lg tracking-tighter">wikipedia</div>
 		</div>
 
 		<!-- Search Component -->
 		<HeroSearch client:load />
+
 	</div>
 </Layout>
