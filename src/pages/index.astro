@@ -1,271 +1,411 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { Search, Send, Globe, Loader2, Database, Sparkles, ChevronDown, Mic } from 'lucide-react';
 ---
 
-<Layout title="CloudSearch - Minimalist">
-	<div class="flex flex-col w-full min-h-[100dvh] pt-12">
-		<!-- Header (Logo & Menu) -->
-		<div class="w-full px-8 flex items-center justify-between z-10 relative">
-			<div class="w-6 h-[2px] bg-black relative before:absolute before:w-6 before:h-[2px] before:bg-black before:-top-2 after:absolute after:w-6 after:h-[2px] after:bg-black after:top-2"></div>
-			<div class="font-bold text-xl tracking-tighter lowercase">cloudsearch</div>
-		</div>
+<Layout title="CloudSearch">
+  <div class="min-h-screen bg-base-200 flex flex-col">
+    <!-- Navbar -->
+    <div class="navbar bg-base-100 shadow-sm px-8">
+      <div class="flex-1">
+        <a class="btn btn-ghost text-xl tracking-tight">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-2"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/></svg>
+          CloudSearch
+        </a>
+      </div>
+      <div class="flex-none gap-2">
+        <button class="btn btn-outline btn-sm" onclick="upload_modal.showModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+          Upload
+        </button>
+        <button class="btn btn-ghost btn-sm">Sign in</button>
+        <button class="btn btn-primary btn-sm">Sign up</button>
+      </div>
+    </div>
 
-		<!-- Vanilla Web Components Hero Search -->
-		<div class="w-full h-full flex flex-col relative mt-[25vh]" id="hero-search-container">
+    <!-- Main Content -->
+    <main class="flex-1 w-full max-w-4xl mx-auto px-4 py-16 flex flex-col items-center">
       
-			{/* Top Search Controls matching reference exactly */}
-			<div class="w-full px-8 flex items-end justify-between mb-2">
-				<div class="flex items-center gap-1 font-semibold text-sm cursor-pointer">
-					english <svg class="w-4 h-4 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-				</div>
-				<div class="flex items-center gap-4 text-gray-300">
-					<svg class="w-5 h-5 cursor-pointer hover:text-gray-500 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
-					<svg class="w-5 h-5 cursor-pointer hover:text-gray-500 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-				</div>
-			</div>
-		
-			<form id="hero-form" class="w-full px-8 relative z-10">
-				<div class="relative flex items-center w-full">
-					<div class="absolute left-0 w-[2px] h-10 bg-black animate-pulse"></div>
-					<input
-						id="hero-input"
-						class="w-full bg-transparent text-5xl md:text-6xl text-black placeholder:text-[#e0e0e0] font-bold tracking-tight outline-none pl-4"
-						placeholder="Search"
-						autocomplete="off"
-						autofocus
-					/>
-				</div>
-				
-				<p id="hero-placeholder-text" class="mt-16 text-gray-400 text-sm font-medium pl-4 transition-opacity duration-300">
-					Type what you are looking for...
-				</p>
-			</form>
-		
-			{/* Decorative large circle background (from reference) */}
-			<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[30rem] h-[30rem] bg-white rounded-full opacity-60 z-0 pointer-events-none filter blur-2xl"></div>
-		
-			{/* Bottom Black Results Panel (from reference history box) */}
-			<div id="results-panel" class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-xl h-[55vh] bg-black text-white rounded-t-3xl p-8 overflow-y-auto hide-scrollbar z-50 shadow-2xl transition-transform duration-500 ease-[cubic-bezier(0,0,0.2,1)] translate-y-full hidden">
-				
-				{/* Crawl UI */}
-				<div id="crawl-view" class="hidden flex-col items-center justify-center h-full text-center space-y-4">
-					<div id="crawl-icon-container">
-						<svg id="crawl-icon" class="w-12 h-12 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>
-					</div>
-					<h3 class="text-xl font-bold" id="crawl-heading">Indexing URL</h3>
-					<p class="text-gray-400" id="crawl-message">Extracting content...</p>
-				</div>
-		
-				{/* Search UI */}
-				<div id="search-view" class="hidden space-y-8">
-					
-					{/* Header */}
-					<div class="w-full flex items-center justify-between border-b border-white/10 pb-4 mb-2">
-						<p class="text-[0.65rem] text-white/50 uppercase tracking-widest font-bold">Synthesis</p>
-						<p id="search-echo" class="text-[0.65rem] text-white/50 lowercase tracking-wider"></p>
-					</div>
+      <div class="text-center mb-12">
+        <h1 class="text-4xl font-bold text-base-content mb-4">What are you looking for?</h1>
+        <p class="text-base-content/70">Search indexed documents, ask a question, or ingest a URL.</p>
+      </div>
 
-					<div class="space-y-3">
-						<div id="ai-response" class="text-base font-medium leading-relaxed text-white">
-							<span class="animate-pulse text-gray-500">Processing inquiry...</span>
-						</div>
-					</div>
-		
-					<div class="space-y-4 pt-6 border-t border-gray-800">
-						<p class="text-[0.65rem] text-white/50 uppercase tracking-widest font-bold mb-4">Citations</p>
-						
-						<div id="citations-list">
-							<span class="animate-pulse text-gray-500">Locating...</span>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
+      <!-- Search Box (Traditional) -->
+      <div class="w-full max-w-2xl relative">
+        <form id="search-form" action="#">
+          <div class="join w-full shadow-lg">
+            <input 
+              id="search-input"
+              type="text" 
+              class="input input-bordered input-lg join-item flex-1 focus:outline-none focus:border-primary" 
+              placeholder="Enter query or URL..." 
+              autocomplete="off"
+            />
+            <button type="submit" id="search-button" class="btn btn-primary btn-lg join-item">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              Search
+            </button>
+          </div>
+        </form>
+        
+        <!-- Suggestions Dropdown -->
+        <ul id="suggestions-box" class="absolute z-50 w-full bg-base-100 shadow-xl rounded-box mt-1 hidden max-h-60 overflow-y-auto border border-base-300">
+        </ul>
+      </div>
+
+      <!-- Loading State -->
+      <div id="loading-state" class="w-full max-w-3xl mt-16 hidden">
+        <div class="flex flex-col gap-6">
+          <div class="skeleton h-32 w-full"></div>
+          <div class="skeleton h-4 w-28"></div>
+          <div class="skeleton h-24 w-full"></div>
+          <div class="skeleton h-24 w-full"></div>
+        </div>
+      </div>
+
+      <!-- Crawl Status -->
+      <div id="crawl-status" class="w-full max-w-3xl mt-12 hidden">
+        <div class="alert shadow-sm bg-base-100 border border-base-300">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-info h-6 w-6 shrink-0"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          <div>
+            <h3 class="font-bold">Indexing URL</h3>
+            <div id="crawl-message" class="text-sm">Extracting content...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results Area -->
+      <div id="results-area" class="w-full max-w-3xl mt-12 hidden">
+        <div class="flex flex-col gap-8 pb-16">
+        
+          <!-- AI Response -->
+          <div class="card bg-base-100 shadow-md border border-base-300">
+            <div class="card-body">
+              <div class="flex items-center gap-2 mb-2 text-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>
+                <h2 class="card-title text-sm uppercase tracking-wider mb-0">AI Synthesis</h2>
+              </div>
+              <div id="ai-content" class="prose prose-sm md:prose-base max-w-none text-base-content leading-relaxed">
+                <!-- AI text injected here -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Citations -->
+          <div>
+            <h3 class="text-sm font-bold uppercase tracking-wider text-base-content/50 mb-4 px-2">Citations</h3>
+            <div id="citations-list" class="flex flex-col gap-4">
+              <!-- Cards injected here -->
+            </div>
+          </div>
+          
+        </div>
+      </div>
+
+    </main>
+
+    <!-- Upload Modal -->
+    <dialog id="upload_modal" class="modal">
+      <div class="modal-box">
+        <h3 class="font-bold text-lg mb-4">Ingest Document</h3>
+        <form id="upload-form" class="flex flex-col gap-4">
+          <input type="text" id="upload-title" placeholder="Document Title" class="input input-bordered w-full" required />
+          
+          <div class="divider text-xs">AND</div>
+
+          <textarea id="upload-content" class="textarea textarea-bordered h-32 w-full" placeholder="Paste raw text here..."></textarea>
+          
+          <div class="divider text-xs">OR</div>
+          
+          <input type="file" id="upload-file" accept=".txt,.md,.csv,.json" class="file-input file-input-bordered w-full" />
+          
+          <div id="upload-error" class="text-error text-sm hidden"></div>
+          
+          <button type="submit" id="upload-btn" class="btn btn-primary mt-2">Ingest into Database</button>
+        </form>
+      </div>
+      <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+      </form>
+    </dialog>
+
+  </div>
 </Layout>
 
-<script>
-	const form = document.getElementById('hero-form');
-	const input = document.getElementById('hero-input') as HTMLInputElement;
-	const placeholderText = document.getElementById('hero-placeholder-text');
-	const resultsPanel = document.getElementById('results-panel');
-	const crawlView = document.getElementById('crawl-view');
-	const searchView = document.getElementById('search-view');
-	const crawlIcon = document.getElementById('crawl-icon');
-	const crawlMessage = document.getElementById('crawl-message');
-	const crawlHeading = document.getElementById('crawl-heading');
-	const aiResponse = document.getElementById('ai-response');
-	const citationsList = document.getElementById('citations-list');
-	const searchEcho = document.getElementById('search-echo');
+<script type="module">
+  const form = document.getElementById('search-form');
+  const input = document.getElementById('search-input');
+  const btn = document.getElementById('search-button');
+  const suggestionsBox = document.getElementById('suggestions-box');
+  
+  const loadingState = document.getElementById('loading-state');
+  const resultsArea = document.getElementById('results-area');
+  const crawlStatus = document.getElementById('crawl-status');
+  const crawlMessage = document.getElementById('crawl-message');
+  
+  const aiContent = document.getElementById('ai-content');
+  const citationsList = document.getElementById('citations-list');
 
-	const isUrl = (text: string) => {
-		try {
-			const url = new URL(text);
-			return url.protocol === "http:" || url.protocol === "https:";
-		} catch {
-			return false;
-		}
-	};
+  const isUrl = (text) => {
+    try {
+      const url = new URL(text);
+      return url.protocol === "http:" || url.protocol === "https:";
+    } catch {
+      return false;
+    }
+  };
 
-	let isPanelOpen = false;
+  // --- Autocomplete Suggestions Logic ---
+  let suggestTimeout;
+  
+  input?.addEventListener('input', (e) => {
+    const val = e.target.value.trim();
+    clearTimeout(suggestTimeout);
+    
+    if(val.length < 2) {
+      suggestionsBox?.classList.add('hidden');
+      return;
+    }
+    
+    // Disable suggestions for URLs
+    if(isUrl(val)) {
+      suggestionsBox?.classList.add('hidden');
+      return;
+    }
 
-	const closePanel = () => {
-		if (resultsPanel) {
-			resultsPanel.style.transform = 'translateY(100%)';
-			setTimeout(() => {
-				resultsPanel.classList.add('hidden');
-			}, 500);
-			isPanelOpen = false;
-		}
-	};
+    suggestTimeout = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/suggest?q=${encodeURIComponent(val)}`);
+        const suggestions = await res.json();
+        
+        if(suggestions.length > 0) {
+          if (suggestionsBox) {
+            suggestionsBox.innerHTML = suggestions.map(s => `
+              <li class="px-5 py-3 hover:bg-base-200 cursor-pointer text-sm font-medium border-b border-base-200 last:border-0 suggestion-item transition-colors">
+                ${s}
+              </li>
+            `).join('');
+            
+            suggestionsBox.classList.remove('hidden');
+            
+            // Attach click listeners to new suggestions
+            document.querySelectorAll('.suggestion-item').forEach(item => {
+              item.addEventListener('click', () => {
+                if (input) input.value = item.textContent.trim();
+                suggestionsBox.classList.add('hidden');
+                // Trigger the form submit programmatically
+                form?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+              });
+            });
+          }
+        } else {
+          suggestionsBox?.classList.add('hidden');
+        }
+      } catch(e) {
+        console.error("Suggestion error:", e);
+      }
+    }, 300); // 300ms debounce
+  });
 
-	const openPanel = () => {
-		if (resultsPanel && !isPanelOpen) {
-			resultsPanel.classList.remove('hidden');
-			// Force reflow
-			void resultsPanel.offsetWidth;
-			resultsPanel.style.transform = 'translateY(0)';
-			isPanelOpen = true;
-		}
-	};
+  // Hide suggestions when clicking outside
+  document.addEventListener('click', (e) => {
+    if(suggestionsBox && !suggestionsBox.contains(e.target) && e.target !== input) {
+      suggestionsBox.classList.add('hidden');
+    }
+  });
 
-	// Reset panel state on input
-	input?.addEventListener('input', (e) => {
-		if (placeholderText) {
-			if ((e.target as HTMLInputElement).value.length > 0) {
-				placeholderText.style.opacity = '0';
-			} else {
-				placeholderText.style.opacity = '1';
-			}
-		}
-		if (isPanelOpen) closePanel();
-	});
 
-	form?.addEventListener('submit', async (e) => {
-		e.preventDefault();
-		const query = input.value.trim();
-		if (!query) return;
+  // --- Upload Logic ---
+  const uploadForm = document.getElementById('upload-form');
+  const uploadTitle = document.getElementById('upload-title');
+  const uploadContent = document.getElementById('upload-content');
+  const uploadFile = document.getElementById('upload-file');
+  const uploadBtn = document.getElementById('upload-btn');
+  const uploadError = document.getElementById('upload-error');
+  const uploadModal = document.getElementById('upload_modal');
 
-		openPanel();
+  uploadForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if(uploadError) uploadError.classList.add('hidden');
+    
+    let textToUpload = uploadContent?.value?.trim() || '';
+    const title = uploadTitle?.value?.trim() || '';
 
-		if (isUrl(query)) {
-			searchView?.classList.add('hidden');
-			crawlView?.classList.remove('hidden');
-			crawlView?.classList.add('flex');
-			
-			if (crawlIcon) {
-				crawlIcon.classList.add('animate-pulse');
-				crawlIcon.classList.remove('text-red-500');
-				crawlIcon.classList.add('text-white');
-			}
-			if (crawlHeading) crawlHeading.textContent = 'Indexing URL';
-			if (crawlMessage) crawlMessage.textContent = 'Extracting content...';
+    if (!textToUpload && uploadFile?.files?.length > 0) {
+      const file = uploadFile.files[0];
+      try {
+        textToUpload = await file.text();
+      } catch(err) {
+        if(uploadError) {
+          uploadError.textContent = "Failed to read file.";
+          uploadError.classList.remove('hidden');
+        }
+        return;
+      }
+    }
 
-			try {
-				const res = await fetch("/api/crawl", {
-					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ url: query }),
-				});
-				const data = await res.json();
-				
-				if (crawlIcon) crawlIcon.classList.remove('animate-pulse');
+    if (!textToUpload) {
+      if(uploadError) {
+        uploadError.textContent = "Please provide text content or upload a file.";
+        uploadError.classList.remove('hidden');
+      }
+      return;
+    }
 
-				if (data.success) {
-					if (crawlMessage) crawlMessage.textContent = 'Indexed successfully';
-					setTimeout(() => {
-						input.value = '';
-						if (placeholderText) placeholderText.style.opacity = '1';
-						closePanel();
-					}, 2000);
-				} else {
-					if (crawlIcon) {
-						crawlIcon.classList.add('text-red-500');
-						crawlIcon.classList.remove('text-white');
-					}
-					if (crawlHeading) crawlHeading.textContent = 'Failed to index';
-					if (crawlMessage) crawlMessage.textContent = data.error || 'Unknown error';
-				}
-			} catch (err: any) {
-				if (crawlIcon) {
-					crawlIcon.classList.remove('animate-pulse');
-					crawlIcon.classList.add('text-red-500');
-					crawlIcon.classList.remove('text-white');
-				}
-				if (crawlHeading) crawlHeading.textContent = 'Failed to index';
-				if (crawlMessage) crawlMessage.textContent = err.message || 'Unknown error';
-			}
-			
-		} else {
-			crawlView?.classList.add('hidden');
-			crawlView?.classList.remove('flex');
-			searchView?.classList.remove('hidden');
+    if(uploadBtn) {
+      uploadBtn.disabled = true;
+      uploadBtn.innerHTML = '<span class="loading loading-spinner"></span> Ingesting...';
+    }
 
-			if (searchEcho) searchEcho.textContent = query;
+    try {
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, content: textToUpload })
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        if(uploadModal) uploadModal.close();
+        if(uploadForm) uploadForm.reset();
+        
+        // Optional: show a quick success toast on the main UI
+        if(input) {
+          input.value = '';
+          input.placeholder = `Successfully indexed: ${title}`;
+          setTimeout(() => input.placeholder = "Enter query or URL...", 3000);
+        }
 
-			if (aiResponse) {
-				aiResponse.innerHTML = '<span class="animate-pulse text-gray-500">Processing inquiry...</span>';
-			}
-			if (citationsList) {
-				citationsList.innerHTML = '<span class="animate-pulse text-gray-500">Locating...</span>';
-			}
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (err) {
+      if(uploadError) {
+        uploadError.textContent = err.message || "Failed to upload.";
+        uploadError.classList.remove('hidden');
+      }
+    } finally {
+      if(uploadBtn) {
+        uploadBtn.disabled = false;
+        uploadBtn.textContent = 'Ingest into Database';
+      }
+    }
+  });
 
-			// Fetch AI
-			fetch("/api/chat", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ message: query }),
-			})
-				.then((res) => res.json())
-				.then((data) => {
-					if (aiResponse) {
-						if (data.answer) {
-							aiResponse.innerHTML = `<p>${data.answer.replace(/\n/g, '<br/>')}</p>`;
-						} else {
-							aiResponse.innerHTML = '<span class="text-gray-500">No response generated.</span>';
-						}
-					}
-				})
-				.catch((err) => {
-					if (aiResponse) {
-						aiResponse.innerHTML = `<span class="text-red-500">Processing error: ${err.message}</span>`;
-					}
-				});
+  // --- Main Search/Crawl Logic ---
+  const setBusy = (busy) => {
+    if (busy) {
+      if(btn) {
+        btn.innerHTML = '<span class="loading loading-spinner"></span>';
+        btn.disabled = true;
+      }
+      if(input) {
+        input.disabled = true;
+        input.blur(); // dismiss keyboard on mobile
+      }
+      
+      suggestionsBox?.classList.add('hidden');
+      loadingState?.classList.remove('hidden');
+      resultsArea?.classList.add('hidden');
+      crawlStatus?.classList.add('hidden');
+    } else {
+      if(btn) {
+        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg> Search';
+        btn.disabled = false;
+      }
+      if(input) input.disabled = false;
+      loadingState?.classList.add('hidden');
+    }
+  };
 
-			// Fetch Search
-			fetch(`/api/search?q=${encodeURIComponent(query)}`)
-				.then((res) => res.json())
-				.then((data) => {
-					if (citationsList) {
-						const sources = data.results || [];
-						if (sources.length > 0) {
-							citationsList.innerHTML = sources.map((src: any, i: number) => `
-								<div class="block mb-6 cursor-pointer group animate-fade-in-up" style="animation-delay: ${i * 100}ms; opacity: 0; animation-fill-mode: forwards;">
-									<a href="${src.url}" target="_blank" rel="noopener noreferrer" class="text-white font-bold text-sm block mb-1 group-hover:text-white/70 transition-colors">
-										${src.title}
-									</a>
-									<p class="text-xs text-white/50 line-clamp-2 leading-relaxed">${src.snippet.replace(/<\/?b>/g, '')}</p>
-								</div>
-							`).join('');
-						} else {
-							citationsList.innerHTML = '<p class="text-gray-500 italic">No matching records.</p>';
-						}
-					}
-				})
-				.catch((err) => {
-					if (citationsList) {
-						citationsList.innerHTML = `<p class="text-red-500">Failed to load citations.</p>`;
-					}
-				});
-		}
-	});
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const query = input?.value?.trim();
+    if (!query) return;
 
-	// Dismiss panel if clicking outside the form and panel
-	document.addEventListener('click', (e) => {
-		const target = e.target as HTMLElement;
-		if (isPanelOpen && !resultsPanel?.contains(target) && !form?.contains(target)) {
-			closePanel();
-		}
-	});
+    setBusy(true);
+
+    if (isUrl(query)) {
+      crawlStatus?.classList.remove('hidden');
+      if (crawlMessage) crawlMessage.textContent = 'Extracting content...';
+
+      try {
+        const res = await fetch("/api/crawl", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: query }),
+        });
+        const data = await res.json();
+        
+        setBusy(false);
+        if (data.success) {
+          if (crawlMessage) crawlMessage.textContent = `Indexed successfully: ${data.title}`;
+          setTimeout(() => {
+            if(input) input.value = '';
+            crawlStatus?.classList.add('hidden');
+          }, 3000);
+        } else {
+          if (crawlMessage) crawlMessage.textContent = data.error || 'Unknown error';
+        }
+      } catch (err) {
+        setBusy(false);
+        if (crawlMessage) crawlMessage.textContent = err.message || 'Unknown error';
+      }
+      
+    } else {
+      // It's a search
+      try {
+        // Run AI and Search in parallel
+        const [chatRes, searchRes] = await Promise.all([
+          fetch("/api/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message: query }),
+          }),
+          fetch(`/api/search?q=${encodeURIComponent(query)}`)
+        ]);
+
+        const chatData = await chatRes.json();
+        const searchData = await searchRes.json();
+
+        setBusy(false);
+        resultsArea?.classList.remove('hidden');
+
+        // Render AI
+        if (aiContent) {
+          if (chatData.answer) {
+            aiContent.innerHTML = `<p>${chatData.answer.replace(/\n/g, '<br/>')}</p>`;
+          } else {
+            aiContent.innerHTML = '<span class="text-error">Processing error.</span>';
+          }
+        }
+
+        // Render citations
+        if (citationsList) {
+          const sources = searchData.results || [];
+          if (sources.length > 0) {
+            citationsList.innerHTML = sources.map((src) => `
+              <div class="card bg-base-100 shadow-sm border border-base-300 hover:border-primary transition-colors">
+                <div class="card-body p-5">
+                  <a href="${src.url}" target="_blank" class="card-title text-primary hover:underline text-lg">${src.title}</a>
+                  <p class="text-base-content/80 text-sm mt-2">${src.snippet.replace(/<\/?b>/g, '')}</p>
+                  <div class="text-xs text-base-content/50 mt-4 flex items-center gap-1 font-mono break-all">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                    ${src.url}
+                  </div>
+                </div>
+              </div>
+            `).join('');
+          } else {
+            citationsList.innerHTML = '<p class="text-base-content/50 italic">No matching records found.</p>';
+          }
+        }
+      } catch (err) {
+        console.error(err);
+        setBusy(false);
+        resultsArea?.classList.remove('hidden');
+        if (aiContent) aiContent.innerHTML = `<span class="text-error">Failed to load: ${err.message}</span>`;
+      }
+    }
+  });
 </script>

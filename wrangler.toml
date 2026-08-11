@@ -10,11 +10,13 @@ preview_database_id = "75f396d8-bade-4393-a269-31ee32b3e072"
 
 [[kv_namespaces]]
 binding = "KV"
-id = "5ad0544c0a9148fd8697bfb20a7e0c4a"
-preview_id = "5ad0544c0a9148fd8697bfb20a7e0c4a"
+id = "f31589b2b52e4e9cb8aa225af2b4ae2e"
+preview_id = "f31589b2b52e4e9cb8aa225af2b4ae2e"
 
 [[kv_namespaces]]
 binding = "SESSION"
-id = "session_mock_id_123"
-preview_id = "session_mock_id_123"
+id = "f31589b2b52e4e9cb8aa225af2b4ae2e"
+preview_id = "f31589b2b52e4e9cb8aa225af2b4ae2e"
 
+[ai]
+binding = "AI"

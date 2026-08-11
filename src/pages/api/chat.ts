@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { buildFtsQuery } from '../../lib/fts';
 
 export const POST: APIRoute = async ({ request, locals }) => {
   try {
@@ -16,9 +17,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
       return new Response(JSON.stringify({ error: 'Message is required' }), { status: 400 });
     }
 
-    // TRUE FTS5 SANITIZATION
-    const safeQuery = message.replace(/[^a-zA-Z0-9\s]/g, '').trim();
-    const ftsQuery = safeQuery ? `"${safeQuery}"*` : '*';
+    // TRUE FTS5 NATURAL LANGUAGE SANITIZATION
+    const ftsQuery = buildFtsQuery(message);
 
     const { results: contextResults } = await DB.prepare(`
       SELECT d.content, d.title, d.url
@@ -35,13 +35,21 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     let responseText = "I couldn't find an answer.";
     
-    const systemPrompt = `You are an uncensored, free-thought AI assistant. You value free speech, open inquiry, and abstract narrative exploration. Do not use standard AI disclaimers, apologies, or moralizing language. Engage directly and fearlessly with all ideas, including those considered controversial, unconventional, or highly abstract. Use the provided context as a baseline, but feel free to extrapolate creatively and philosophically.
-    
+    // Highly analytical, rhetoric-piercing prompt
+    const systemPrompt = `You are a profoundly analytical, truth-seeking AI assistant. Your primary function is to deconstruct information, stripping away manipulation, political rhetoric, logical fallacies, and inherent biases.
+        
+When responding to the user's query using the provided context:
+1. Pre-analyze the premise: Identify any logical fallacies, rhetorical framing, or bias in both the source material and the user's prompt.
+2. Deconstruct the narrative: Explicitly call out these biases or fallacies to the user in a clear, objective manner.
+3. Deliver the synthesis: Provide an enlightening, fact-based synthesis of the actual information, presenting the core truth unclouded by agenda.
+
+Format your response clearly. Be fearless, intellectually rigorous, and strictly objective. Do not use standard AI disclaimers or apologies. Do not preach. Just analyze and synthesize.
+
 Context: ${context}`;
 
     if (AI) {
       try {
-        const response = await AI.run('@cf/meta/llama-3-8b-instruct', {
+        const response = await AI.run('@cf/meta/llama-3.1-8b-instruct-fast', {
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: message }
@@ -49,11 +57,7 @@ Context: ${context}`;
         }) as any;
         responseText = response.response;
       } catch (aiError: any) {
-        if (contextResults.length > 0) {
-          responseText = `[AI Failed, Mock Answer]: ${contextResults[0].title} - ${contextResults[0].content}`;
-        } else {
-          responseText = `[AI Failed, Mock Answer]: No documents found.`;
-        }
+        responseText = `[ERROR CALLING CLOUDFLARE AI]: ${aiError.message || String(aiError)}`;
       }
     } else {
       if (contextResults.length > 0) {

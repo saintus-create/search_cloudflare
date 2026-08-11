@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { buildFtsQuery } from '../../lib/fts';
 
 export const GET: APIRoute = async ({ url, locals }) => {
   try {
@@ -13,9 +14,8 @@ export const GET: APIRoute = async ({ url, locals }) => {
       return new Response(JSON.stringify({ results: [] }));
     }
 
-    // Explicitly secure the FTS5 MATCH parameter
-    const safeQuery = query.replace(/[^a-zA-Z0-9\s]/g, '').trim();
-    const ftsQuery = safeQuery ? `"${safeQuery}"*` : '*';
+    // Explicitly secure and parse the FTS5 MATCH parameter for NLP
+    const ftsQuery = buildFtsQuery(query);
 
     const { results } = await DB.prepare(`
       SELECT 
