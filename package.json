@@ -9,7 +9,7 @@
     "check": "astro check",
     "preview": "astro preview",
     "astro": "astro",
-    "pages:deploy": "npm run check && npm run build && npx wrangler pages deploy ./dist"
+    "deploy": "npm run check && npm run build && npx wrangler deploy"
   },
   "dependencies": {
     "@astrojs/cloudflare": "14.1.7",
