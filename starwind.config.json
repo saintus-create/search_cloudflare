@@ -1,10 +1,10 @@
 {
   "$schema": "https://starwind.dev/config-schema.json",
   "tailwind": {
-    "css": "src/styles/starwind.css",
+    "css": "src/styles/global.css",
     "baseColor": "neutral",
     "cssVariables": true
   },
-  "componentDir": "src/components",
-  "components": []
+  "componentDir": "src/components/starwind",
+  "components": ["button"]
 }
