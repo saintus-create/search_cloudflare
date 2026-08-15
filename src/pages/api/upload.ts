@@ -1,8 +1,9 @@
 import type { APIRoute } from 'astro';
 
-const MAX_REQUEST_BYTES = 130_000;
+const MAX_REQUEST_BYTES = 7 * 1024 * 1024;
 const MAX_CONTENT_CHARS = 100_000;
 const MAX_TITLE_CHARS = 500;
+const MAX_ORIGINAL_DATA_CHARS = 7_000_000;
 
 const json = (body: Record<string, unknown>, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -13,7 +14,7 @@ const json = (body: Record<string, unknown>, status = 200) =>
 export const POST: APIRoute = async ({ request, locals }) => {
   try {
     const contentLength = Number(request.headers.get('content-length') || 0);
-    if (contentLength > MAX_REQUEST_BYTES) return json({ error: 'Request body is too large' }, 413);
+    if (contentLength > MAX_REQUEST_BYTES) return json({ error: 'Request body is too large. Files are limited to 5 MB.' }, 413);
 
     const body = await request.json() as {
       title?: string;
@@ -22,10 +23,13 @@ export const POST: APIRoute = async ({ request, locals }) => {
     };
     const title = typeof body.title === 'string' ? body.title.trim() : '';
     const content = typeof body.content === 'string' ? body.content.trim() : '';
+    const suppliedMetadata = body.metadata && typeof body.metadata === 'object' ? body.metadata : {};
+    const originalData = typeof suppliedMetadata.originalData === 'string' ? suppliedMetadata.originalData : '';
 
     if (!title || !content) return json({ error: 'Title and content are required' }, 400);
     if (title.length > MAX_TITLE_CHARS) return json({ error: 'Title is too long' }, 400);
     if (content.length > MAX_CONTENT_CHARS) return json({ error: 'Content is too long' }, 413);
+    if (originalData.length > MAX_ORIGINAL_DATA_CHARS) return json({ error: 'Original file payload is too large' }, 413);
 
     const DB = locals?.runtime?.env?.DB;
     if (!DB) return json({ error: 'Database binding (DB) is missing.' }, 500);
@@ -33,7 +37,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const url = `local://${crypto.randomUUID()}`;
     const metadata = {
       source: 'manual_upload',
-      ...(body.metadata && typeof body.metadata === 'object' ? body.metadata : {}),
+      ...suppliedMetadata,
     };
 
     const result = await DB.prepare(
