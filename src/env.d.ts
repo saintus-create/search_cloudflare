@@ -8,7 +8,5 @@ declare namespace App {
 
 interface Env {
   DB: D1Database;
-  KV: KVNamespace;
-  AI: any; // Workers AI
-  FIRECRAWL_API_KEY: string;
+  AI: any; // Workers AI binding
 }
