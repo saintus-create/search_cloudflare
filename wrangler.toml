@@ -1,13 +1,12 @@
 name = "cloudflare-search-portal"
-# Keep the Worker runtime current; update deliberately with a compatibility review.
+main = "@astrojs/cloudflare/entrypoints/server"
 compatibility_date = "2026-08-15"
-pages_build_output_dir = "./dist"
 
 [[d1_databases]]
 binding = "DB"
 database_name = "worker_1_db"
-database_id = "75f396d8-bade-4393-a269-31ee32b3e072"
-preview_database_id = "75f396d8-bade-4393-a269-31ee32b3e072"
+database_id = "75f396d8-bade-4393-a269-31ee32b3e3f2"
+preview_database_id = "75f396d8-bade-4393-a269-31ee32b3e3f2"
 
 [ai]
 binding = "AI"
