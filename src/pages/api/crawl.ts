@@ -1,68 +1,154 @@
 import type { APIRoute } from 'astro';
 
+const MAX_REQUEST_BYTES = 8 * 1024;
+const MAX_RESPONSE_BYTES = 1_000_000;
+const MAX_STORED_CONTENT = 100_000;
+const MAX_REDIRECTS = 3;
+
+const json = (body: Record<string, unknown>, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { 'content-type': 'application/json; charset=utf-8' },
+  });
+
+const isPrivateHost = (hostname: string) => {
+  const host = hostname.toLowerCase().replace(/\.$/, '');
+  if (host === 'localhost' || host.endsWith('.localhost') || host === 'local') return true;
+  if (host === 'metadata.google.internal') return true;
+  if (host === '0.0.0.0' || host === '127.0.0.1' || host === '::1' || host === '[::1]') return true;
+
+  const ipv4 = host.match(/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/);
+  if (!ipv4) return false;
+  const [a, b] = ipv4.slice(1, 3).map(Number);
+  return a === 0 || a === 10 || a === 127 || (a === 169 && b === 254) ||
+    (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168);
+};
+
+const validateUrl = (value: string) => {
+  let parsed: URL;
+  try {
+    parsed = new URL(value);
+  } catch {
+    throw new Error('Invalid URL');
+  }
+
+  if (!['http:', 'https:'].includes(parsed.protocol)) {
+    throw new Error('Only HTTP(S) URLs are allowed');
+  }
+  if (parsed.username || parsed.password) {
+    throw new Error('URLs with embedded credentials are not allowed');
+  }
+  if (isPrivateHost(parsed.hostname)) {
+    throw new Error('Private or local network targets are not allowed');
+  }
+
+  return parsed;
+};
+
+const readLimitedText = async (response: Response) => {
+  const declaredLength = Number(response.headers.get('content-length') || 0);
+  if (declaredLength > MAX_RESPONSE_BYTES) {
+    throw new Error('Remote response exceeds the 1 MB limit');
+  }
+  if (!response.body) return '';
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let total = 0;
+  let text = '';
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > MAX_RESPONSE_BYTES) {
+        await reader.cancel();
+        throw new Error('Remote response exceeds the 1 MB limit');
+      }
+      text += decoder.decode(value, { stream: true });
+    }
+    return text + decoder.decode();
+  } finally {
+    reader.releaseLock();
+  }
+};
+
+const fetchPublicUrl = async (initialUrl: URL) => {
+  let current = initialUrl;
+
+  for (let attempt = 0; attempt <= MAX_REDIRECTS; attempt += 1) {
+    const response = await fetch(current, {
+      headers: {
+        'User-Agent': 'CloudflareSearchBot/1.0',
+        Accept: 'text/html,text/plain,application/xhtml+xml;q=0.9,*/*;q=0.1',
+      },
+      redirect: 'manual',
+      signal: AbortSignal.timeout(10_000),
+    });
+
+    if (response.status >= 300 && response.status < 400) {
+      const location = response.headers.get('location');
+      if (!location || attempt === MAX_REDIRECTS) {
+        throw new Error('Too many redirects or invalid redirect response');
+      }
+      current = validateUrl(new URL(location, current).toString());
+      continue;
+    }
+
+    if (!response.ok) throw new Error(`Remote server returned HTTP ${response.status}`);
+
+    const contentType = (response.headers.get('content-type') || '').toLowerCase();
+    if (!contentType.includes('text/html') && !contentType.includes('text/plain') && !contentType.includes('application/xhtml+xml')) {
+      throw new Error('Remote resource is not a supported text document');
+    }
+
+    return { response, url: current };
+  }
+
+  throw new Error('Unable to fetch URL');
+};
+
 export const POST: APIRoute = async ({ request, locals }) => {
   try {
+    const contentLength = Number(request.headers.get('content-length') || 0);
+    if (contentLength > MAX_REQUEST_BYTES) return json({ error: 'Request body is too large' }, 413);
+
     const body = await request.json() as { url?: string };
-    const { url } = body;
+    if (!body.url || typeof body.url !== 'string') return json({ error: 'URL is required' }, 400);
+
+    const target = validateUrl(body.url.trim());
     const env = locals?.runtime?.env || {};
     const DB = env.DB;
-    const KV = env.KV;
+    if (!DB) return json({ error: 'Database binding missing.' }, 500);
 
-    if (!DB || !KV) {
-      return new Response(JSON.stringify({ error: 'Database or KV binding missing.' }), { status: 500 });
-    }
+    const { response, url } = await fetchPublicUrl(target);
+    const raw = await readLimitedText(response);
+    const content = raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().substring(0, MAX_STORED_CONTENT);
+    if (!content) return json({ error: 'Remote document contained no readable text' }, 422);
 
-    if (!url) {
-      return new Response(JSON.stringify({ error: 'URL is required' }), { status: 400 });
-    }
-
-    let title = url;
-    let content = '';
-
-    try {
-      const res = await fetch(url, {
-        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; CloudflareSearchBot/1.0)' },
-        signal: AbortSignal.timeout(10000),
-      });
-      const text = await res.text();
-      content = text.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().substring(0, 1000);
-      title = url;
-    } catch {
-      content = `Failed to fetch ${url}`;
-    }
-
+    const canonicalUrl = url.toString();
+    const title = url.hostname;
+    const metadata = JSON.stringify({ source: 'url', fetched_at: new Date().toISOString() });
     const existing = await DB.prepare('SELECT id FROM documents WHERE url = ?')
-      .bind(url)
-      .first();
+      .bind(canonicalUrl)
+      .first<{ id: number }>();
 
-    let result;
     if (existing) {
-      result = await DB.prepare(
-        'UPDATE documents SET title = ?, content = ?, metadata = ? WHERE url = ?'
-      )
-        .bind(title, content, JSON.stringify({}), url)
+      await DB.prepare('UPDATE documents SET title = ?, content = ?, metadata = ? WHERE id = ?')
+        .bind(title, content, metadata, existing.id)
         .run();
-    } else {
-      result = await DB.prepare(
-        'INSERT INTO documents (url, title, content, metadata) VALUES (?, ?, ?, ?)'
-      )
-        .bind(url, title, content, JSON.stringify({}))
-        .run();
+      return json({ success: true, id: existing.id, title, url: canonicalUrl, updated: true });
     }
 
-    await KV.put(`doc:${url}`, JSON.stringify({
-      url,
-      title,
-      content,
-      timestamp: new Date().toISOString()
-    }));
+    const result = await DB.prepare('INSERT INTO documents (url, title, content, metadata) VALUES (?, ?, ?, ?)')
+      .bind(canonicalUrl, title, content, metadata)
+      .run();
 
-    return new Response(JSON.stringify({ 
-      success: true, 
-      id: result.meta.last_row_id,
-      title 
-    }));
-  } catch (error: any) {
-    return new Response(JSON.stringify({ error: error.message || String(error) }), { status: 500 });
+    return json({ success: true, id: result.meta.last_row_id, title, url: canonicalUrl, updated: false }, 201);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unexpected crawl failure';
+    const clientError = /^(Invalid URL|Only HTTP|URLs with|Private or local)/.test(message);
+    return json({ error: message }, clientError ? 400 : 502);
   }
 };
