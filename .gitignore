@@ -4,7 +4,14 @@ dist/
 .DS_Store
 *.log
 .env
-.env.local
-pnpm-lock.yaml
-package-lock.json
+.env.*
+!.dev.vars.example
 .wrangler/
+
+# Local/generated ingestion artifacts
+extracted.txt
+*.mp3
+*.wav
+*.m4a
+kv.json
+insert.sql
