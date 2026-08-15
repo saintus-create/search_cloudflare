@@ -1,25 +1,32 @@
 import type { APIRoute } from 'astro';
 import { buildFtsQuery } from '../../lib/fts';
 
+const MAX_REQUEST_BYTES = 12 * 1024;
+const MAX_MESSAGE_CHARS = 8_000;
+const MAX_CONTEXT_CHARS = 12_000;
+
+const json = (body: Record<string, unknown>, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { 'content-type': 'application/json; charset=utf-8' },
+  });
+
 export const POST: APIRoute = async ({ request, locals }) => {
   try {
+    const contentLength = Number(request.headers.get('content-length') || 0);
+    if (contentLength > MAX_REQUEST_BYTES) return json({ error: 'Request body is too large' }, 413);
+
     const body = await request.json() as { message?: string };
-    const { message } = body;
+    const message = typeof body.message === 'string' ? body.message.trim() : '';
+    if (!message) return json({ error: 'Message is required' }, 400);
+    if (message.length > MAX_MESSAGE_CHARS) return json({ error: 'Message is too long' }, 413);
+
     const env = locals?.runtime?.env || {};
     const DB = env.DB;
     const AI = env.AI;
+    if (!DB) return json({ error: 'Database binding (DB) is missing.' }, 500);
 
-    if (!DB) {
-      return new Response(JSON.stringify({ error: 'Database binding (DB) is missing.' }), { status: 500 });
-    }
-
-    if (!message) {
-      return new Response(JSON.stringify({ error: 'Message is required' }), { status: 400 });
-    }
-
-    // TRUE FTS5 NATURAL LANGUAGE SANITIZATION
     const ftsQuery = buildFtsQuery(message);
-
     const { results: contextResults } = await DB.prepare(`
       SELECT d.content, d.title, d.url
       FROM documents d
@@ -27,51 +34,41 @@ export const POST: APIRoute = async ({ request, locals }) => {
       WHERE documents_fts MATCH ?
       ORDER BY rank
       LIMIT 3
-    `).bind(ftsQuery).all() as { results: any[] };
+    `).bind(ftsQuery).all() as { results: Array<{ content: string; title: string; url: string }> };
 
     const context = contextResults
-      .map((r: any) => `Source: ${r.title} (${r.url})\nContent: ${r.content}`)
+      .map((r) => `Source: ${r.title} (${r.url})\nContent: ${r.content.substring(0, MAX_CONTEXT_CHARS)}`)
       .join('\n\n');
 
-    let responseText = "I couldn't find an answer.";
-    
-    // Highly analytical, rhetoric-piercing prompt
-    const systemPrompt = `You are a profoundly analytical, truth-seeking AI assistant. Your primary function is to deconstruct information, stripping away manipulation, political rhetoric, logical fallacies, and inherent biases.
-        
-When responding to the user's query using the provided context:
-1. Pre-analyze the premise: Identify any logical fallacies, rhetorical framing, or bias in both the source material and the user's prompt.
-2. Deconstruct the narrative: Explicitly call out these biases or fallacies to the user in a clear, objective manner.
-3. Deliver the synthesis: Provide an enlightening, fact-based synthesis of the actual information, presenting the core truth unclouded by agenda.
+    let responseText = "I couldn't find enough indexed evidence to answer that.";
 
-Format your response clearly. Be fearless, intellectually rigorous, and strictly objective. Do not use standard AI disclaimers or apologies. Do not preach. Just analyze and synthesize.
+    const systemPrompt = `You are an evidence-grounded research assistant.
+Use only the supplied source context for factual claims about the user's question. Distinguish source statements from your own inference. If sources conflict, describe the conflict rather than choosing a "core truth" without evidence. Do not invent facts, citations, or source contents. You may identify rhetorical framing or logical fallacies when the supplied material actually supports that analysis. If the context is insufficient, say so.
 
-Context: ${context}`;
+Source context:
+${context || '(No matching source documents were retrieved.)'}`;
 
     if (AI) {
       try {
         const response = await AI.run('@cf/meta/llama-3.1-8b-instruct-fast', {
           messages: [
             { role: 'system', content: systemPrompt },
-            { role: 'user', content: message }
-          ]
-        }) as any;
-        responseText = response.response;
-      } catch (aiError: any) {
-        responseText = `[ERROR CALLING CLOUDFLARE AI]: ${aiError.message || String(aiError)}`;
+            { role: 'user', content: message },
+          ],
+        }) as { response?: string };
+        responseText = response.response || responseText;
+      } catch {
+        responseText = 'The language model was unavailable. The retrieved sources are still available below.';
       }
-    } else {
-      if (contextResults.length > 0) {
-        responseText = `[Mock AI Answer based on context]: I found some documents related to your query. Here is a summary of the first one: "${contextResults[0].title}" - ${contextResults[0].content}`;
-      } else {
-        responseText = `[Mock AI Answer]: I'm sorry, I couldn't find any documents related to "${message}".`;
-      }
+    } else if (contextResults.length > 0) {
+      responseText = `No language model is configured. Retrieved ${contextResults.length} source document(s), beginning with “${contextResults[0].title}”.`;
     }
 
-    return new Response(JSON.stringify({ 
+    return json({
       answer: responseText,
-      sources: contextResults.map((r: any) => ({ title: r.title, url: r.url }))
-    }));
-  } catch (error: any) {
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+      sources: contextResults.map((r) => ({ title: r.title, url: r.url })),
+    });
+  } catch {
+    return json({ error: 'Unable to process the request.' }, 500);
   }
 };
