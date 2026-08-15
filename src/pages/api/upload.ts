@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 
-const MAX_REQUEST_BYTES = 110_000;
+const MAX_REQUEST_BYTES = 130_000;
 const MAX_CONTENT_CHARS = 100_000;
 const MAX_TITLE_CHARS = 500;
 
@@ -15,7 +15,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const contentLength = Number(request.headers.get('content-length') || 0);
     if (contentLength > MAX_REQUEST_BYTES) return json({ error: 'Request body is too large' }, 413);
 
-    const body = await request.json() as { title?: string; content?: string };
+    const body = await request.json() as {
+      title?: string;
+      content?: string;
+      metadata?: Record<string, unknown>;
+    };
     const title = typeof body.title === 'string' ? body.title.trim() : '';
     const content = typeof body.content === 'string' ? body.content.trim() : '';
 
@@ -27,10 +31,15 @@ export const POST: APIRoute = async ({ request, locals }) => {
     if (!DB) return json({ error: 'Database binding (DB) is missing.' }, 500);
 
     const url = `local://${crypto.randomUUID()}`;
+    const metadata = {
+      source: 'manual_upload',
+      ...(body.metadata && typeof body.metadata === 'object' ? body.metadata : {}),
+    };
+
     const result = await DB.prepare(
       'INSERT INTO documents (url, title, content, metadata) VALUES (?, ?, ?, ?)'
     )
-      .bind(url, title, content, JSON.stringify({ source: 'manual_upload' }))
+      .bind(url, title, content, JSON.stringify(metadata))
       .run();
 
     return json({ success: true, id: result.meta.last_row_id, title, url }, 201);
