@@ -3,409 +3,172 @@ import Layout from '../layouts/Layout.astro';
 ---
 
 <Layout title="CloudSearch">
-  <div class="min-h-screen bg-base-200 flex flex-col">
-    <!-- Navbar -->
-    <div class="navbar bg-base-100 shadow-sm px-8">
-      <div class="flex-1">
-        <a class="btn btn-ghost text-xl tracking-tight">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-2"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/></svg>
-          CloudSearch
-        </a>
-      </div>
-      <div class="flex-none gap-2">
-        <button class="btn btn-outline btn-sm" onclick="upload_modal.showModal()">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
-          Upload
+  <header class="sticky top-0 z-40 border-b bg-[var(--surface)]/95 backdrop-blur">
+    <div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <a href="/" class="flex items-center gap-3 font-semibold tracking-tight" aria-label="CloudSearch home">
+        <span class="grid size-9 place-items-center rounded-xl bg-[var(--accent)] text-white shadow-sm">C</span>
+        <span>CloudSearch</span>
+      </a>
+      <div class="flex items-center gap-2">
+        <button id="theme-toggle" type="button" class="grid size-9 place-items-center rounded-lg border bg-transparent hover:bg-slate-100 dark:hover:bg-slate-800" aria-label="Toggle theme">
+          <span aria-hidden="true">◐</span>
         </button>
-        <button class="btn btn-ghost btn-sm">Sign in</button>
-        <button class="btn btn-primary btn-sm">Sign up</button>
+        <button id="upload-button" type="button" class="inline-flex h-9 items-center gap-2 rounded-lg bg-[var(--accent)] px-4 text-sm font-medium text-white shadow-sm hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+          <span aria-hidden="true">↑</span> Upload
+        </button>
       </div>
     </div>
+  </header>
 
-    <!-- Main Content -->
-    <main class="flex-1 w-full max-w-4xl mx-auto px-4 py-16 flex flex-col items-center">
-      
-      <div class="text-center mb-12">
-        <h1 class="text-4xl font-bold text-base-content mb-4">What are you looking for?</h1>
-        <p class="text-base-content/70">Search indexed documents, ask a question, or ingest a URL.</p>
-      </div>
+  <main class="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+    <section class="mx-auto max-w-3xl text-center">
+      <div class="mb-4 inline-flex items-center rounded-full border bg-[var(--surface)] px-3 py-1 text-xs font-medium muted">Evidence-grounded search</div>
+      <h1 class="text-4xl font-semibold tracking-tight sm:text-5xl">Find the evidence.</h1>
+      <p class="mx-auto mt-4 max-w-2xl text-base leading-7 muted">Search your indexed documents, inspect sources, or ask a question grounded in the material you have stored.</p>
 
-      <!-- Search Box (Traditional) -->
-      <div class="w-full max-w-2xl relative">
-        <form id="search-form" action="#">
-          <div class="join w-full shadow-lg">
-            <input 
-              id="search-input"
-              type="text" 
-              class="input input-bordered input-lg join-item flex-1 focus:outline-none focus:border-primary" 
-              placeholder="Enter query or URL..." 
-              autocomplete="off"
-            />
-            <button type="submit" id="search-button" class="btn btn-primary btn-lg join-item">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-              Search
-            </button>
-          </div>
-        </form>
-        
-        <!-- Suggestions Dropdown -->
-        <ul id="suggestions-box" class="absolute z-50 w-full bg-base-100 shadow-xl rounded-box mt-1 hidden max-h-60 overflow-y-auto border border-base-300">
-        </ul>
-      </div>
-
-      <!-- Loading State -->
-      <div id="loading-state" class="w-full max-w-3xl mt-16 hidden">
-        <div class="flex flex-col gap-6">
-          <div class="skeleton h-32 w-full"></div>
-          <div class="skeleton h-4 w-28"></div>
-          <div class="skeleton h-24 w-full"></div>
-          <div class="skeleton h-24 w-full"></div>
+      <form id="search-form" class="relative mt-8">
+        <div class="flex rounded-2xl border bg-[var(--surface)] p-2 shadow-lg shadow-slate-200/40 focus-within:ring-2 focus-within:ring-blue-500/30 dark:shadow-none">
+          <label for="search-input" class="sr-only">Search documents</label>
+          <input id="search-input" type="search" autocomplete="off" placeholder="Search documents or paste a URL…" class="min-w-0 flex-1 border-0 bg-transparent px-4 py-3 text-base outline-none focus:ring-0" />
+          <button id="search-button" type="submit" class="inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60">Search</button>
         </div>
-      </div>
-
-      <!-- Crawl Status -->
-      <div id="crawl-status" class="w-full max-w-3xl mt-12 hidden">
-        <div class="alert shadow-sm bg-base-100 border border-base-300">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-info h-6 w-6 shrink-0"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-          <div>
-            <h3 class="font-bold">Indexing URL</h3>
-            <div id="crawl-message" class="text-sm">Extracting content...</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Results Area -->
-      <div id="results-area" class="w-full max-w-3xl mt-12 hidden">
-        <div class="flex flex-col gap-8 pb-16">
-        
-          <!-- AI Response -->
-          <div class="card bg-base-100 shadow-md border border-base-300">
-            <div class="card-body">
-              <div class="flex items-center gap-2 mb-2 text-primary">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>
-                <h2 class="card-title text-sm uppercase tracking-wider mb-0">AI Synthesis</h2>
-              </div>
-              <div id="ai-content" class="prose prose-sm md:prose-base max-w-none text-base-content leading-relaxed">
-                <!-- AI text injected here -->
-              </div>
-            </div>
-          </div>
-
-          <!-- Citations -->
-          <div>
-            <h3 class="text-sm font-bold uppercase tracking-wider text-base-content/50 mb-4 px-2">Citations</h3>
-            <div id="citations-list" class="flex flex-col gap-4">
-              <!-- Cards injected here -->
-            </div>
-          </div>
-          
-        </div>
-      </div>
-
-    </main>
-
-    <!-- Upload Modal -->
-    <dialog id="upload_modal" class="modal">
-      <div class="modal-box">
-        <h3 class="font-bold text-lg mb-4">Ingest Document</h3>
-        <form id="upload-form" class="flex flex-col gap-4">
-          <input type="text" id="upload-title" placeholder="Document Title" class="input input-bordered w-full" required />
-          
-          <div class="divider text-xs">AND</div>
-
-          <textarea id="upload-content" class="textarea textarea-bordered h-32 w-full" placeholder="Paste raw text here..."></textarea>
-          
-          <div class="divider text-xs">OR</div>
-          
-          <input type="file" id="upload-file" accept=".txt,.md,.csv,.json" class="file-input file-input-bordered w-full" />
-          
-          <div id="upload-error" class="text-error text-sm hidden"></div>
-          
-          <button type="submit" id="upload-btn" class="btn btn-primary mt-2">Ingest into Database</button>
-        </form>
-      </div>
-      <form method="dialog" class="modal-backdrop">
-        <button>close</button>
+        <div id="suggestions-box" class="absolute left-0 right-0 top-full z-30 mt-2 hidden overflow-hidden rounded-xl border bg-[var(--surface)] text-left shadow-xl"></div>
       </form>
-    </dialog>
 
-  </div>
+      <div class="mt-5 flex flex-wrap justify-center gap-2 text-xs muted">
+        <span class="rounded-full border px-3 py-1">Full-text search</span>
+        <span class="rounded-full border px-3 py-1">Source citations</span>
+        <span class="rounded-full border px-3 py-1">URL ingestion</span>
+        <span class="rounded-full border px-3 py-1">AI synthesis</span>
+      </div>
+    </section>
+
+    <section id="loading-state" class="mx-auto mt-12 hidden max-w-4xl" aria-live="polite">
+      <div class="space-y-3 animate-pulse"><div class="h-5 w-40 rounded bg-slate-200 dark:bg-slate-800"></div><div class="h-24 rounded-2xl bg-slate-200 dark:bg-slate-800"></div><div class="h-24 rounded-2xl bg-slate-200 dark:bg-slate-800"></div></div>
+    </section>
+
+    <section id="crawl-status" class="mx-auto mt-8 hidden max-w-4xl" aria-live="polite">
+      <div class="flex items-center gap-3 rounded-xl border bg-[var(--surface)] p-4"><span class="grid size-8 place-items-center rounded-full bg-blue-50 text-blue-600 dark:bg-blue-950">↻</span><div><p class="font-medium">Indexing URL</p><p id="crawl-message" class="text-sm muted">Extracting content…</p></div></div>
+    </section>
+
+    <section id="results-area" class="mx-auto mt-12 hidden max-w-4xl">
+      <div class="grid gap-8 lg:grid-cols-[1fr_320px]">
+        <div>
+          <div class="mb-4 flex items-center justify-between"><h2 class="text-sm font-semibold uppercase tracking-wider muted">Sources</h2><span id="result-count" class="text-xs muted"></span></div>
+          <div id="citations-list" class="space-y-3"></div>
+        </div>
+        <aside class="lg:sticky lg:top-24 lg:self-start">
+          <div class="rounded-2xl border bg-[var(--surface)] p-5 shadow-sm">
+            <div class="mb-3 flex items-center gap-2"><span class="grid size-7 place-items-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950">✦</span><h2 class="font-semibold">AI synthesis</h2></div>
+            <div id="ai-content" class="text-sm leading-6 muted">Search to generate an evidence-grounded synthesis.</div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section id="empty-state" class="mx-auto mt-16 max-w-xl text-center">
+      <div class="mx-auto grid size-12 place-items-center rounded-2xl border bg-[var(--surface)] text-xl">⌕</div>
+      <h2 class="mt-4 font-semibold">Your research workspace</h2>
+      <p class="mt-2 text-sm leading-6 muted">Upload a document or search the indexed corpus. Results stay tied to their underlying sources.</p>
+    </section>
+  </main>
 </Layout>
 
 <script type="module">
   const form = document.getElementById('search-form');
   const input = document.getElementById('search-input');
-  const btn = document.getElementById('search-button');
-  const suggestionsBox = document.getElementById('suggestions-box');
-  
-  const loadingState = document.getElementById('loading-state');
-  const resultsArea = document.getElementById('results-area');
-  const crawlStatus = document.getElementById('crawl-status');
+  const button = document.getElementById('search-button');
+  const suggestions = document.getElementById('suggestions-box');
+  const loading = document.getElementById('loading-state');
+  const results = document.getElementById('results-area');
+  const empty = document.getElementById('empty-state');
+  const sources = document.getElementById('citations-list');
+  const answer = document.getElementById('ai-content');
+  const count = document.getElementById('result-count');
+  const crawl = document.getElementById('crawl-status');
   const crawlMessage = document.getElementById('crawl-message');
-  
-  const aiContent = document.getElementById('ai-content');
-  const citationsList = document.getElementById('citations-list');
 
-  const isUrl = (text) => {
-    try {
-      const url = new URL(text);
-      return url.protocol === "http:" || url.protocol === "https:";
-    } catch {
-      return false;
+  const isUrl = (value) => { try { const url = new URL(value); return ['http:', 'https:'].includes(url.protocol); } catch { return false; } };
+  const setBusy = (busy) => { button.disabled = busy; input.disabled = busy; button.textContent = busy ? 'Searching…' : 'Search'; loading.classList.toggle('hidden', !busy); };
+
+  const renderSources = (items) => {
+    sources.replaceChildren();
+    count.textContent = `${items.length} result${items.length === 1 ? '' : 's'}`;
+    for (const item of items) {
+      const card = document.createElement('article');
+      card.className = 'rounded-2xl border bg-[var(--surface)] p-5 shadow-sm transition hover:shadow-md';
+      const title = document.createElement('h3');
+      title.className = 'font-semibold';
+      title.textContent = item.title || 'Untitled document';
+      const meta = document.createElement('p');
+      meta.className = 'mt-1 text-xs muted';
+      meta.textContent = item.url || 'Indexed document';
+      const snippet = document.createElement('p');
+      snippet.className = 'mt-3 text-sm leading-6 muted';
+      snippet.textContent = item.snippet || 'No excerpt available.';
+      card.append(title, meta, snippet);
+      sources.appendChild(card);
     }
   };
 
-  // --- Autocomplete Suggestions Logic ---
-  let suggestTimeout;
-  
-  input?.addEventListener('input', (e) => {
-    const val = e.target.value.trim();
-    clearTimeout(suggestTimeout);
-    
-    if(val.length < 2) {
-      suggestionsBox?.classList.add('hidden');
-      return;
-    }
-    
-    // Disable suggestions for URLs
-    if(isUrl(val)) {
-      suggestionsBox?.classList.add('hidden');
-      return;
-    }
-
-    suggestTimeout = setTimeout(async () => {
+  let suggestionTimer;
+  input.addEventListener('input', () => {
+    clearTimeout(suggestionTimer);
+    const value = input.value.trim();
+    if (value.length < 2 || isUrl(value)) { suggestions.classList.add('hidden'); return; }
+    suggestionTimer = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/suggest?q=${encodeURIComponent(val)}`);
-        const suggestions = await res.json();
-        
-        if(suggestions.length > 0) {
-          if (suggestionsBox) {
-            suggestionsBox.innerHTML = suggestions.map(s => `
-              <li class="px-5 py-3 hover:bg-base-200 cursor-pointer text-sm font-medium border-b border-base-200 last:border-0 suggestion-item transition-colors">
-                ${s}
-              </li>
-            `).join('');
-            
-            suggestionsBox.classList.remove('hidden');
-            
-            // Attach click listeners to new suggestions
-            document.querySelectorAll('.suggestion-item').forEach(item => {
-              item.addEventListener('click', () => {
-                if (input) input.value = item.textContent.trim();
-                suggestionsBox.classList.add('hidden');
-                // Trigger the form submit programmatically
-                form?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
-              });
-            });
-          }
-        } else {
-          suggestionsBox?.classList.add('hidden');
+        const response = await fetch(`/api/suggest?q=${encodeURIComponent(value)}`);
+        const items = await response.json();
+        suggestions.replaceChildren();
+        for (const item of Array.isArray(items) ? items.slice(0, 6) : []) {
+          const option = document.createElement('button');
+          option.type = 'button'; option.className = 'block w-full border-b px-4 py-3 text-left text-sm last:border-0 hover:bg-slate-50 dark:hover:bg-slate-800'; option.textContent = item;
+          option.addEventListener('click', () => { input.value = item; suggestions.classList.add('hidden'); form.requestSubmit(); });
+          suggestions.appendChild(option);
         }
-      } catch(e) {
-        console.error("Suggestion error:", e);
-      }
-    }, 300); // 300ms debounce
+        suggestions.classList.toggle('hidden', !suggestions.children.length);
+      } catch { suggestions.classList.add('hidden'); }
+    }, 250);
   });
 
-  // Hide suggestions when clicking outside
-  document.addEventListener('click', (e) => {
-    if(suggestionsBox && !suggestionsBox.contains(e.target) && e.target !== input) {
-      suggestionsBox.classList.add('hidden');
-    }
-  });
+  document.addEventListener('click', (event) => { if (!suggestions.contains(event.target) && event.target !== input) suggestions.classList.add('hidden'); });
 
-
-  // --- Upload Logic ---
-  const uploadForm = document.getElementById('upload-form');
-  const uploadTitle = document.getElementById('upload-title');
-  const uploadContent = document.getElementById('upload-content');
-  const uploadFile = document.getElementById('upload-file');
-  const uploadBtn = document.getElementById('upload-btn');
-  const uploadError = document.getElementById('upload-error');
-  const uploadModal = document.getElementById('upload_modal');
-
-  uploadForm?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    if(uploadError) uploadError.classList.add('hidden');
-    
-    let textToUpload = uploadContent?.value?.trim() || '';
-    const title = uploadTitle?.value?.trim() || '';
-
-    if (!textToUpload && uploadFile?.files?.length > 0) {
-      const file = uploadFile.files[0];
-      try {
-        textToUpload = await file.text();
-      } catch(err) {
-        if(uploadError) {
-          uploadError.textContent = "Failed to read file.";
-          uploadError.classList.remove('hidden');
-        }
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const query = input.value.trim();
+    if (!query) return;
+    suggestions.classList.add('hidden'); empty.classList.add('hidden'); results.classList.add('hidden'); crawl.classList.add('hidden'); setBusy(true);
+    try {
+      if (isUrl(query)) {
+        crawl.classList.remove('hidden');
+        const response = await fetch('/api/crawl', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url: query }) });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.error || 'Unable to index URL.');
+        crawlMessage.textContent = `Indexed successfully: ${data.title || query}`;
         return;
       }
-    }
-
-    if (!textToUpload) {
-      if(uploadError) {
-        uploadError.textContent = "Please provide text content or upload a file.";
-        uploadError.classList.remove('hidden');
-      }
-      return;
-    }
-
-    if(uploadBtn) {
-      uploadBtn.disabled = true;
-      uploadBtn.innerHTML = '<span class="loading loading-spinner"></span> Ingesting...';
-    }
-
-    try {
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, content: textToUpload })
-      });
-      const data = await res.json();
-      
-      if (data.success) {
-        if(uploadModal) uploadModal.close();
-        if(uploadForm) uploadForm.reset();
-        
-        // Optional: show a quick success toast on the main UI
-        if(input) {
-          input.value = '';
-          input.placeholder = `Successfully indexed: ${title}`;
-          setTimeout(() => input.placeholder = "Enter query or URL...", 3000);
-        }
-
-      } else {
-        throw new Error(data.error);
-      }
-    } catch (err) {
-      if(uploadError) {
-        uploadError.textContent = err.message || "Failed to upload.";
-        uploadError.classList.remove('hidden');
-      }
+      const [searchResponse, chatResponse] = await Promise.all([
+        fetch(`/api/search?q=${encodeURIComponent(query)}`),
+        fetch('/api/chat', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ message: query }) })
+      ]);
+      const searchData = await searchResponse.json();
+      const chatData = await chatResponse.json();
+      if (!searchResponse.ok) throw new Error(searchData.error || 'Search failed.');
+      renderSources(Array.isArray(searchData.results) ? searchData.results : []);
+      answer.textContent = chatData.answer || 'No synthesis was returned.';
+      results.classList.remove('hidden');
+    } catch (error) {
+      answer.textContent = error instanceof Error ? error.message : 'Something went wrong.';
+      results.classList.remove('hidden');
+      sources.replaceChildren(); count.textContent = '';
     } finally {
-      if(uploadBtn) {
-        uploadBtn.disabled = false;
-        uploadBtn.textContent = 'Ingest into Database';
-      }
+      setBusy(false);
     }
   });
 
-  // --- Main Search/Crawl Logic ---
-  const setBusy = (busy) => {
-    if (busy) {
-      if(btn) {
-        btn.innerHTML = '<span class="loading loading-spinner"></span>';
-        btn.disabled = true;
-      }
-      if(input) {
-        input.disabled = true;
-        input.blur(); // dismiss keyboard on mobile
-      }
-      
-      suggestionsBox?.classList.add('hidden');
-      loadingState?.classList.remove('hidden');
-      resultsArea?.classList.add('hidden');
-      crawlStatus?.classList.add('hidden');
-    } else {
-      if(btn) {
-        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg> Search';
-        btn.disabled = false;
-      }
-      if(input) input.disabled = false;
-      loadingState?.classList.add('hidden');
-    }
-  };
-
-  form?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const query = input?.value?.trim();
-    if (!query) return;
-
-    setBusy(true);
-
-    if (isUrl(query)) {
-      crawlStatus?.classList.remove('hidden');
-      if (crawlMessage) crawlMessage.textContent = 'Extracting content...';
-
-      try {
-        const res = await fetch("/api/crawl", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url: query }),
-        });
-        const data = await res.json();
-        
-        setBusy(false);
-        if (data.success) {
-          if (crawlMessage) crawlMessage.textContent = `Indexed successfully: ${data.title}`;
-          setTimeout(() => {
-            if(input) input.value = '';
-            crawlStatus?.classList.add('hidden');
-          }, 3000);
-        } else {
-          if (crawlMessage) crawlMessage.textContent = data.error || 'Unknown error';
-        }
-      } catch (err) {
-        setBusy(false);
-        if (crawlMessage) crawlMessage.textContent = err.message || 'Unknown error';
-      }
-      
-    } else {
-      // It's a search
-      try {
-        // Run AI and Search in parallel
-        const [chatRes, searchRes] = await Promise.all([
-          fetch("/api/chat", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message: query }),
-          }),
-          fetch(`/api/search?q=${encodeURIComponent(query)}`)
-        ]);
-
-        const chatData = await chatRes.json();
-        const searchData = await searchRes.json();
-
-        setBusy(false);
-        resultsArea?.classList.remove('hidden');
-
-        // Render AI
-        if (aiContent) {
-          if (chatData.answer) {
-            aiContent.innerHTML = `<p>${chatData.answer.replace(/\n/g, '<br/>')}</p>`;
-          } else {
-            aiContent.innerHTML = '<span class="text-error">Processing error.</span>';
-          }
-        }
-
-        // Render citations
-        if (citationsList) {
-          const sources = searchData.results || [];
-          if (sources.length > 0) {
-            citationsList.innerHTML = sources.map((src) => `
-              <div class="card bg-base-100 shadow-sm border border-base-300 hover:border-primary transition-colors">
-                <div class="card-body p-5">
-                  <a href="${src.url}" target="_blank" class="card-title text-primary hover:underline text-lg">${src.title}</a>
-                  <p class="text-base-content/80 text-sm mt-2">${src.snippet.replace(/<\/?b>/g, '')}</p>
-                  <div class="text-xs text-base-content/50 mt-4 flex items-center gap-1 font-mono break-all">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                    ${src.url}
-                  </div>
-                </div>
-              </div>
-            `).join('');
-          } else {
-            citationsList.innerHTML = '<p class="text-base-content/50 italic">No matching records found.</p>';
-          }
-        }
-      } catch (err) {
-        console.error(err);
-        setBusy(false);
-        resultsArea?.classList.remove('hidden');
-        if (aiContent) aiContent.innerHTML = `<span class="text-error">Failed to load: ${err.message}</span>`;
-      }
-    }
+  document.getElementById('theme-toggle')?.addEventListener('click', () => {
+    document.documentElement.classList.toggle('dark');
+    localStorage.setItem('cloudsearch-theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
   });
 </script>
