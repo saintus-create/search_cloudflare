@@ -1,14 +1,32 @@
-export const buildFtsQuery = (query: string): string => {
-  const tokens = query
+export type FtsMatchMode = 'and' | 'or';
+
+const MAX_QUERY_TOKENS = 32;
+
+export const tokenizeFtsQuery = (query: string): string[] =>
+  query
     .normalize('NFKC')
-    .match(/[\p{L}\p{N}]+/gu)
-    ?.filter((token) => token.length >= 2)
-    .slice(0, 32) ?? [];
+    .replace(/[‐‑‒–—―]/g, '-')
+    .match(/[\p{L}\p{N}]+(?:[./-][\p{L}\p{N}]+)*/gu)
+    ?.slice(0, MAX_QUERY_TOKENS) ?? [];
 
-  if (tokens.length === 0) return '*';
+const quoteToken = (token: string) => `"${token.replaceAll('"', '""')}"*`;
 
-  // Quote every token so user input cannot become FTS5 syntax.
-  // Prefix matching preserves useful partial-term search without inventing
-  // a natural-language interpretation of the user's question.
-  return tokens.map((token) => `"${token.replaceAll('"', '""')}"*`).join(' OR ');
+export const buildFtsQuery = (query: string, mode: FtsMatchMode = 'and'): string => {
+  const tokens = tokenizeFtsQuery(query);
+  if (tokens.length === 0) return '';
+  return tokens.map(quoteToken).join(mode === 'and' ? ' AND ' : ' OR ');
+};
+
+export interface FtsQueryStep {
+  mode: FtsMatchMode;
+  query: string;
+}
+
+export const buildFtsQueryLadder = (query: string): FtsQueryStep[] => {
+  const strict = buildFtsQuery(query, 'and');
+  if (!strict) return [];
+  const broad = buildFtsQuery(query, 'or');
+  return strict === broad
+    ? [{ mode: 'and', query: strict }]
+    : [{ mode: 'and', query: strict }, { mode: 'or', query: broad }];
 };

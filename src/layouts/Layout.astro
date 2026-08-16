@@ -1,4 +1,7 @@
 ---
+import { ThemeInitScript } from '@starwind-ui/astro/theme';
+import '../styles/starwind.css';
+
 interface Props { title: string; }
 const { title } = Astro.props;
 ---
@@ -10,22 +13,12 @@ const { title } = Astro.props;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#f8fafc" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <ThemeInitScript />
     <title>{title}</title>
   </head>
   <body>
-    <script is:inline>
-      const savedTheme = localStorage.getItem('cloudsearch-theme');
-      if (savedTheme === 'dark' || (!savedTheme && matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.classList.add('dark');
-    </script>
     <div class="min-h-screen">
       <slot />
     </div>
-    <script>
-      import '../scripts/upload-automation';
-    </script>
   </body>
 </html>
-
-<style is:global>
-  @import '../styles/global.css';
-</style>

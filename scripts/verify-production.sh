@@ -47,6 +47,7 @@ ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || {
   exit 2
 }
 cd "$ROOT"
+WRANGLER="$ROOT/node_modules/.bin/wrangler"
 
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
@@ -97,6 +98,10 @@ fi
 run_or_abort AUDIT "Auditing repository against PROJECT_CONTRACT.md" \
   ./scripts/reconcile.sh --no-fetch --report "$TMP/audit.json"
 
+echo
+echo "[dependency audit] Rejecting high-severity production dependency advisories"
+npm run audit || abort_gate SECURITY "Production dependency audit failed."
+
 # The type/check stage intentionally precedes tests.
 echo
 echo "[type/check] Running Astro type and content checks"
@@ -133,10 +138,13 @@ echo "[build]"
 npm run build || abort_gate BUILD "Production build failed."
 STATUS[BUILD]="✓"
 
-# Wrangler parses and bundles the exact production configuration without writing.
+# Configuration must be generated from explicit operator-confirmed IDs, then
+# Wrangler parses and bundles it without writing to Cloudflare.
 echo
-echo "[config] Wrangler dry run"
-npx wrangler deploy --dry-run --outdir "$TMP/wrangler-dry-run" || abort_gate CONFIG "Wrangler rejected the Worker configuration."
+echo "[config] Confirmed binding check and Wrangler dry run"
+node scripts/configure-cloudflare.mjs --check || abort_gate CONFIG "Generated Wrangler config does not match confirmed infrastructure inputs."
+[[ -x "$WRANGLER" ]] || abort_gate CONFIG "Wrangler is not installed."
+"$WRANGLER" deploy --dry-run --outdir "$TMP/wrangler-dry-run" || abort_gate CONFIG "Wrangler rejected the Worker configuration."
 STATUS[CONFIG]="✓"
 
 # Git checks. A local candidate may be dirty because the documented workflow asks
@@ -156,7 +164,11 @@ if [[ "$MODE" == "production" ]]; then
   git fetch origin main --quiet || abort_gate GIT "Could not fetch origin/main."
   [[ "$(git rev-parse HEAD)" == "$(git rev-parse origin/main)" ]] || abort_gate GIT "HEAD does not equal pushed origin/main."
 else
-  if [[ "$BRANCH" != "main" ]]; then abort_gate GIT "Local verification must run on main."; fi
+  if [[ "$BRANCH" != "main" ]]; then
+    if [[ "${GITHUB_ACTIONS:-}" != "true" || "${GITHUB_EVENT_NAME:-}" != "pull_request" ]]; then
+      abort_gate GIT "Local verification must run on main (detached pull-request CI is the only exception)."
+    fi
+  fi
   if [[ -n "$(git status --porcelain)" ]]; then
     echo "  Candidate tree is dirty as expected before human diff/commit review."
   fi
@@ -174,8 +186,8 @@ verify_remote_identity() {
 
   echo
   echo "[production infrastructure] Verifying authenticated Cloudflare resources (read-only)"
-  npx wrangler whoami >"$TMP/whoami.txt" || abort_gate CONFIG "Wrangler authentication failed."
-  npx wrangler d1 list --json >"$TMP/d1.json" || abort_gate CONFIG "Could not list D1 databases."
+  "$WRANGLER" whoami >"$TMP/whoami.txt" || abort_gate CONFIG "Wrangler authentication failed."
+  "$WRANGLER" d1 list --json >"$TMP/d1.json" || abort_gate CONFIG "Could not list D1 databases."
   if ! node - "$TMP/d1.json" "$EXPECTED_PRODUCTION_D1_ID" "$EXPECTED_PREVIEW_D1_ID" <<'NODE'
 const fs=require('fs');
 const rows=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
@@ -190,7 +202,7 @@ NODE
     abort_gate CONFIG "Confirmed D1 resources were not found in the authenticated account."
   fi
 
-  npx wrangler kv namespace list --json >"$TMP/kv.json" || abort_gate CONFIG "Could not list KV namespaces."
+  "$WRANGLER" kv namespace list --json >"$TMP/kv.json" || abort_gate CONFIG "Could not list KV namespaces."
   if ! node - "$TMP/kv.json" "$EXPECTED_RATE_LIMIT_KV_ID" <<'NODE'
 const fs=require('fs');
 const rows=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
@@ -204,7 +216,7 @@ NODE
     abort_gate CONFIG "Confirmed RATE_LIMIT KV namespace was not found."
   fi
 
-  npx wrangler secret list --json >"$TMP/secrets.json" || abort_gate CONFIG "Could not list Worker secrets."
+  "$WRANGLER" secret list --json >"$TMP/secrets.json" || abort_gate CONFIG "Could not list Worker secrets."
   if ! node - "$TMP/secrets.json" INGEST_TOKEN CHAT_TOKEN <<'NODE'
 const fs=require('fs');
 const rows=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
@@ -219,7 +231,7 @@ NODE
   # `d1 migrations list` is read-only. Any listed SQL file is pending; this gate
   # does not apply it. The operator must independently verify the target and use
   # Wrangler with APPLY_PRODUCTION_MIGRATIONS=yes outside this script.
-  npx wrangler d1 migrations list DB --remote >"$TMP/remote-migrations.txt" || abort_gate MIGRATIONS "Could not inspect remote migration state."
+  "$WRANGLER" d1 migrations list DB --remote >"$TMP/remote-migrations.txt" || abort_gate MIGRATIONS "Could not inspect remote migration state."
   if grep -Eq '[0-9]{4}_[^[:space:]]+\.sql' "$TMP/remote-migrations.txt"; then
     cat "$TMP/remote-migrations.txt" >&2
     abort_gate MIGRATIONS "Production has pending migrations. Verify the D1 ID, then apply them explicitly; this script will not write production."

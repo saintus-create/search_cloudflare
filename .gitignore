@@ -15,3 +15,6 @@ extracted.txt
 *.m4a
 kv.json
 insert.sql
+
+# Generated from operator-confirmed Cloudflare resource IDs.
+wrangler.jsonc

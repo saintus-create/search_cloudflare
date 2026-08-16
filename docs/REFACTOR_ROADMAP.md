@@ -1,96 +1,40 @@
-# Refactor Roadmap
+# Production Roadmap
 
-This roadmap is based on the current `main` implementation and the production-hardening review. It intentionally separates verified defects from future architecture work.
+`PROJECT_CONTRACT.md` is authoritative. This document records remaining operational work rather than proposing a different architecture.
 
-## P0: completed in this refactor
+## Implemented in the production-hardening pass
 
-### Ingestion safety
-- Reject non-HTTP(S) URLs, embedded credentials, and obvious private/local targets.
-- Validate redirect destinations rather than following redirects blindly.
-- Limit crawl request size and remote response size.
-- Reject unsupported content types and non-success HTTP responses.
-- Do not index failed fetches as if they were documents.
-- Return the existing document ID on updates instead of relying on `last_row_id`.
-- Bound manual upload request, title, and content sizes.
+- Current secure Astro 7, Vite 8, Tailwind 4, Cloudflare Workers, and one Starwind UI 3 system are contract-enforced.
+- Search, suggestions, and chat share one bounded D1/FTS5 retrieval module.
+- Retrieval uses escaped AND-first matching with OR fallback.
+- Upload, crawl, and chat fail closed behind separate bearer secrets.
+- Protected APIs use a dedicated KV rate-limit binding.
+- Crawling requires an exact hostname allowlist, checks public DNS results, manually revalidates redirects, blocks special-use destinations, and bounds responses.
+- URL ingestion uses an atomic D1 upsert.
+- Health checks return HTTP 503 for missing bindings, missing schema, database errors, or FTS drift.
+- Dependencies are exactly pinned and locked.
+- Unit, security, migration/integration, type, build, and deployment gates are scripted.
+- Personal extraction artifacts, binary media, generated payloads, and unsafe self-deploy loops are removed.
 
-### Data integrity
-- Repair the `documents_au` FTS5 trigger.
-- Rebuild the existing external-content FTS index during migration `0003`.
-- Remove the redundant KV document copy and the unused KV/session bindings.
+## Operator blockers before the first production deployment
 
-### Dependency hygiene
-- Remove the unused Firecrawl SDK from the runtime dependency graph.
-- Remove the Tailwind 4 PostCSS plugin from a Tailwind 3 configuration.
-- Pin the application dependencies that were previously floating on `latest`.
-- Add `astro check` to the verification/deployment path.
-- Stop ignoring package lockfiles so a reproducible lockfile can be committed.
+1. Independently identify and confirm the Cloudflare account ID.
+2. Confirm the existing production D1 database ID.
+3. Provision and confirm a distinct preview D1 database.
+4. Provision and confirm a dedicated `RATE_LIMIT` KV namespace.
+5. Configure exact `INGEST_ALLOWED_HOSTS`.
+6. Configure different `INGEST_TOKEN` and `CHAT_TOKEN` Worker secrets.
+7. Add the confirmed IDs/hosts as GitHub repository variables.
+8. Add `CLOUDFLARE_API_TOKEN` to the protected GitHub production environment.
+9. Inspect and explicitly apply pending migrations to the confirmed production D1 database.
+10. Run `./scripts/verify-production.sh --production` and require every gate to pass.
 
-### AI boundary
-- Bound chat input and retrieved context.
-- Replace the previous "core truth" instruction with an evidence-grounded contract that distinguishes source statements, inference, conflict, and uncertainty.
-- Avoid exposing provider error messages to end users.
+Automation intentionally stops rather than creating or guessing these resources.
 
-## P1: next implementation pass
+## Future work requiring a contract revision
 
-### Mutation authorization
-The crawl and upload endpoints mutate the corpus. They need an explicit administrative authorization model before public deployment. The preferred design is Cloudflare Access or an application session backed by a dedicated authentication flow, rather than a secret embedded in browser JavaScript.
-
-### Rate limiting
-Add per-route limits for crawl, upload, chat, and search. Crawl should have a separate quota because it causes outbound network work.
-
-### Stronger SSRF controls
-The current crawler blocks obvious private targets and validates redirect hops. A production crawler should additionally use an explicit host allowlist where practical, or an outbound fetching service with stronger destination controls. DNS rebinding cannot be completely eliminated by string validation alone.
-
-### Ingestion pipeline
-Separate fetching, normalization, extraction, deduplication, and indexing into modules. The current endpoint is still doing too much work in one route.
-
-### Canonical document model
-D1 should remain authoritative for metadata and indexed text. If large original files are introduced, store those originals in R2 and keep D1 references/metadata rather than duplicating complete documents across storage products.
-
-## P2: retrieval quality
-
-### Hybrid retrieval
-Keep D1 FTS5 for exact lexical retrieval. Add semantic retrieval as a second provider rather than replacing FTS5.
-
-### Query handling
-Introduce explicit query modes:
-- exact/identifier search for citations, statutes, URLs, and technical identifiers;
-- lexical keyword search;
-- semantic retrieval for natural-language questions.
-
-The current FTS helper is now safe and less destructive, but it remains intentionally simple.
-
-### Reranking and evidence selection
-Retrieve more candidates, rerank them, apply a relevance threshold, and select bounded evidence passages before generation. Do not send whole documents to the model.
-
-### Citations
-Return stable document IDs and passage-level evidence metadata so generated answers can point to the actual retrieved material rather than merely naming a source document.
-
-## P3: platform modernization
-
-- Evaluate migration from the existing Pages-oriented deployment configuration to the current Worker-oriented Astro deployment model.
-- Prefer `wrangler.jsonc` for new configuration work, while avoiding a migration solely for cosmetic reasons.
-- Enable observability after deployment behavior is verified.
-- Generate Cloudflare binding types with Wrangler rather than maintaining hand-written binding interfaces where the generated types are sufficient.
-
-## P4: repository hygiene
-
-- Remove tracked development artifacts that are not fixtures or source material.
-- Consolidate duplicate PDF extraction scripts.
-- Move repeatable ingestion tooling under a dedicated `scripts/` directory.
-- Add automated tests for URL validation, redirect handling, FTS query construction, upload limits, and FTS update behavior.
-- Add CI for `npm install`, `npm run check`, and `npm run build`.
-
-## Definition of done
-
-The application should be considered production-ready only when:
-
-1. Corpus mutation requires authorization.
-2. Crawl traffic is rate-limited and destination-controlled.
-3. D1/FTS5 is demonstrably consistent after inserts, updates, and deletes.
-4. Search behavior is covered by automated tests.
-5. Retrieval is separated from answer generation.
-6. AI answers are grounded in bounded, cited evidence.
-7. Dependencies are reproducibly locked.
-8. CI verifies type correctness and production builds.
-9. Deployment and rollback procedures are documented.
+- Move canonical large binaries to R2 and retain only extracted text/metadata in D1.
+- Replace KV's eventually consistent coarse limiter with Cloudflare Rate Limiting or a Durable Object when strict quotas are required.
+- Add semantic retrieval as a second provider while retaining D1/FTS5 for exact lexical retrieval.
+- Add passage-level citation offsets and reranking.
+- Add an authenticated administrative UI through Cloudflare Access; never expose API bearer secrets to browser code.

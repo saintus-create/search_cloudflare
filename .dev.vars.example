@@ -1,0 +1,3 @@
+# Copy to .dev.vars for local development. Never commit real secret values.
+INGEST_TOKEN=replace-with-a-long-random-ingestion-secret
+CHAT_TOKEN=replace-with-a-different-long-random-chat-secret

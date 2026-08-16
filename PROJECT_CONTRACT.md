@@ -20,10 +20,12 @@ implementation and verification changes it requires.
 | --- | --- |
 | Runtime | Node.js 22.x in CI and deployment tooling |
 | Package manager | npm with a committed `package-lock.json` |
-| Application | Astro **6.x**, SSR output |
-| Adapter | `@astrojs/cloudflare` **13.7.0** (the Astro 6-compatible line) |
-| Styling | Tailwind CSS **4.x** through `@tailwindcss/vite` |
-| UI system | Starwind UI **1.16.2**, Astro/vendored-source model |
+| Application | Astro **7.2.2**, SSR output |
+| Adapter | `@astrojs/cloudflare` **14.2.1** |
+| Build runtime | Vite **8.2.1**, matching Astro 7's declared dependency |
+| Type checker | TypeScript **6.0.3**, the newest line accepted by `@astrojs/check` |
+| Styling | Tailwind CSS **4.3.3** through `@tailwindcss/vite` |
+| UI system | Starwind UI **3.1.0** with `@starwind-ui/astro` **1.1.0** |
 | Hosting | Cloudflare **Workers**, not Pages |
 | SQL/search | Cloudflare D1 plus SQLite FTS5 |
 | Rate limiting | Dedicated Cloudflare KV binding named `RATE_LIMIT` |
@@ -32,18 +34,16 @@ implementation and verification changes it requires.
 Versions in `package.json` must be exact—no `latest`, `*`, `^`, `~`, URL, or Git
 ranges. The lockfile is authoritative for transitive dependencies.
 
-### Why Starwind 1.16.2
+### Starwind UI decision
 
-Starwind is the selected UI system. Version 1.16.2 matches the repository's
-Astro-native, vendored-component structure and supports Astro 6/Tailwind 4 without
-adding React. A Starwind major-version migration is a contract change, not routine
-reconciliation.
+Starwind is the selected UI system because it is Astro-native and does not add
+React. Starwind CLI 3.1.0 and the Astro runtime adapter 1.1.0 are pinned together;
+future major migrations require a reviewed contract change.
 
 Starwind is considered installed only when all of the following are true:
 
-1. `starwind` is pinned to `1.16.2` in `devDependencies`.
-2. `starwind.config.json` points to `src/styles/global.css` and
-   `src/components/starwind`.
+1. `starwind` is pinned to `3.1.0` and `@starwind-ui/astro` to `1.1.0`.
+2. `starwind.config.json` points to the canonical stylesheet and component paths.
 3. At least one substantive `.astro` component exists under that directory.
 4. At least one application page/layout imports a Starwind component.
 5. The shared stylesheet defines the Tailwind 4 theme variables needed by that
@@ -197,7 +197,7 @@ CI and production verification use this order and stop at the first failure:
 ```text
 install
   ↓
-contract/config audit
+contract/config + dependency audit
   ↓
 type/check
   ↓

@@ -1,54 +1,46 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import { Button } from '../components/starwind/button';
 ---
 
 <Layout title="CloudSearch">
-  <header class="sticky top-0 z-40 border-b bg-[var(--surface)]/95 backdrop-blur">
+  <header class="sticky top-0 z-40 border-b bg-[var(--card)]/95 backdrop-blur">
     <div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
       <a href="/" class="flex items-center gap-3 font-semibold tracking-tight" aria-label="CloudSearch home">
-        <span class="grid size-9 place-items-center rounded-xl bg-[var(--accent)] text-white shadow-sm">C</span>
+        <span class="grid size-9 place-items-center rounded-xl bg-primary text-primary-foreground shadow-sm">C</span>
         <span>CloudSearch</span>
       </a>
-      <div class="flex items-center gap-2">
-        <button id="theme-toggle" type="button" class="grid size-9 place-items-center rounded-lg border bg-transparent hover:bg-slate-100 dark:hover:bg-slate-800" aria-label="Toggle theme">
-          <span aria-hidden="true">◐</span>
-        </button>
-        <button id="upload-button" type="button" class="inline-flex h-9 items-center gap-2 rounded-lg bg-[var(--accent)] px-4 text-sm font-medium text-white shadow-sm hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-          <span aria-hidden="true">↑</span> Upload
-        </button>
-      </div>
+      <Button id="theme-toggle" type="button" variant="outline" size="icon-sm" aria-label="Toggle theme">
+        <span aria-hidden="true">◐</span>
+      </Button>
     </div>
   </header>
 
   <main class="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
     <section class="mx-auto max-w-3xl text-center">
-      <div class="mb-4 inline-flex items-center rounded-full border bg-[var(--surface)] px-3 py-1 text-xs font-medium muted">Evidence-grounded search</div>
+      <div class="mb-4 inline-flex items-center rounded-full border bg-[var(--card)] px-3 py-1 text-xs font-medium muted">Evidence-grounded search</div>
       <h1 class="text-4xl font-semibold tracking-tight sm:text-5xl">Find the evidence.</h1>
-      <p class="mx-auto mt-4 max-w-2xl text-base leading-7 muted">Search your indexed documents, inspect sources, or ask a question grounded in the material you have stored.</p>
+      <p class="mx-auto mt-4 max-w-2xl text-base leading-7 muted">Search indexed documents and inspect the sources behind every result.</p>
 
       <form id="search-form" class="relative mt-8">
-        <div class="flex rounded-2xl border bg-[var(--surface)] p-2 shadow-lg shadow-slate-200/40 focus-within:ring-2 focus-within:ring-blue-500/30 dark:shadow-none">
+        <div class="flex rounded-2xl border bg-[var(--card)] p-2 shadow-lg shadow-slate-200/40 focus-within:ring-2 focus-within:ring-blue-500/30 dark:shadow-none">
           <label for="search-input" class="sr-only">Search documents</label>
-          <input id="search-input" type="search" autocomplete="off" placeholder="Search documents or paste a URL…" class="min-w-0 flex-1 border-0 bg-transparent px-4 py-3 text-base outline-none focus:ring-0" />
-          <button id="search-button" type="submit" class="inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60">Search</button>
+          <input id="search-input" type="search" autocomplete="off" placeholder="Search indexed documents…" class="min-w-0 flex-1 border-0 bg-transparent px-4 py-3 text-base outline-none focus:ring-0" />
+          <Button id="search-button" type="submit" variant="primary" size="md">Search</Button>
         </div>
-        <div id="suggestions-box" class="absolute left-0 right-0 top-full z-30 mt-2 hidden overflow-hidden rounded-xl border bg-[var(--surface)] text-left shadow-xl"></div>
+        <div id="suggestions-box" class="absolute left-0 right-0 top-full z-30 mt-2 hidden overflow-hidden rounded-xl border bg-[var(--card)] text-left shadow-xl"></div>
       </form>
 
       <div class="mt-5 flex flex-wrap justify-center gap-2 text-xs muted">
         <span class="rounded-full border px-3 py-1">Full-text search</span>
         <span class="rounded-full border px-3 py-1">Source citations</span>
-        <span class="rounded-full border px-3 py-1">URL ingestion</span>
-        <span class="rounded-full border px-3 py-1">AI synthesis</span>
+        <span class="rounded-full border px-3 py-1">AND-first retrieval</span>
+        <span class="rounded-full border px-3 py-1">Authenticated ingestion</span>
       </div>
     </section>
 
     <section id="loading-state" class="mx-auto mt-12 hidden max-w-4xl" aria-live="polite">
       <div class="space-y-3 animate-pulse"><div class="h-5 w-40 rounded bg-slate-200 dark:bg-slate-800"></div><div class="h-24 rounded-2xl bg-slate-200 dark:bg-slate-800"></div><div class="h-24 rounded-2xl bg-slate-200 dark:bg-slate-800"></div></div>
-    </section>
-
-    <section id="crawl-status" class="mx-auto mt-8 hidden max-w-4xl" aria-live="polite">
-      <div class="flex items-center gap-3 rounded-xl border bg-[var(--surface)] p-4"><span class="grid size-8 place-items-center rounded-full bg-blue-50 text-blue-600 dark:bg-blue-950">↻</span><div><p class="font-medium">Indexing URL</p><p id="crawl-message" class="text-sm muted">Extracting content…</p></div></div>
     </section>
 
     <section id="results-area" class="mx-auto mt-12 hidden max-w-4xl">
@@ -58,45 +50,47 @@ import Layout from '../layouts/Layout.astro';
           <div id="citations-list" class="space-y-3"></div>
         </div>
         <aside class="lg:sticky lg:top-24 lg:self-start">
-          <div class="rounded-2xl border bg-[var(--surface)] p-5 shadow-sm">
-            <div class="mb-3 flex items-center gap-2"><span class="grid size-7 place-items-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950">✦</span><h2 class="font-semibold">AI synthesis</h2></div>
-            <div id="ai-content" class="text-sm leading-6 muted">Search to generate an evidence-grounded synthesis.</div>
+          <div class="rounded-2xl border bg-[var(--card)] p-5 shadow-sm">
+            <div class="mb-3 flex items-center gap-2"><span class="grid size-7 place-items-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950">✦</span><h2 class="font-semibold">Grounded answers</h2></div>
+            <div id="ai-content" class="text-sm leading-6 muted">Answer synthesis is available through the authenticated chat API. Browser code never receives the chat secret.</div>
           </div>
         </aside>
       </div>
     </section>
 
     <section id="empty-state" class="mx-auto mt-16 max-w-xl text-center">
-      <div class="mx-auto grid size-12 place-items-center rounded-2xl border bg-[var(--surface)] text-xl">⌕</div>
+      <div class="mx-auto grid size-12 place-items-center rounded-2xl border bg-[var(--card)] text-xl">⌕</div>
       <h2 class="mt-4 font-semibold">Your research workspace</h2>
-      <p class="mt-2 text-sm leading-6 muted">Upload a document or search the indexed corpus. Results stay tied to their underlying sources.</p>
+      <p class="mt-2 text-sm leading-6 muted">Search the indexed corpus. Administrative ingestion and AI routes fail closed behind bearer authentication.</p>
     </section>
   </main>
 </Layout>
 
-<script type="module">
-  const form = document.getElementById('search-form');
-  const input = document.getElementById('search-input');
-  const button = document.getElementById('search-button');
-  const suggestions = document.getElementById('suggestions-box');
-  const loading = document.getElementById('loading-state');
-  const results = document.getElementById('results-area');
-  const empty = document.getElementById('empty-state');
-  const sources = document.getElementById('citations-list');
-  const answer = document.getElementById('ai-content');
-  const count = document.getElementById('result-count');
-  const crawl = document.getElementById('crawl-status');
-  const crawlMessage = document.getElementById('crawl-message');
+<script>
+  const form = document.getElementById('search-form') as HTMLFormElement;
+  const input = document.getElementById('search-input') as HTMLInputElement;
+  const button = document.getElementById('search-button') as HTMLButtonElement;
+  const suggestions = document.getElementById('suggestions-box') as HTMLDivElement;
+  const loading = document.getElementById('loading-state') as HTMLElement;
+  const results = document.getElementById('results-area') as HTMLElement;
+  const empty = document.getElementById('empty-state') as HTMLElement;
+  const sources = document.getElementById('citations-list') as HTMLDivElement;
+  const answer = document.getElementById('ai-content') as HTMLDivElement;
+  const count = document.getElementById('result-count') as HTMLElement;
 
-  const isUrl = (value) => { try { const url = new URL(value); return ['http:', 'https:'].includes(url.protocol); } catch { return false; } };
-  const setBusy = (busy) => { button.disabled = busy; input.disabled = busy; button.textContent = busy ? 'Searching…' : 'Search'; loading.classList.toggle('hidden', !busy); };
+  const setBusy = (busy: boolean) => {
+    button.disabled = busy;
+    input.disabled = busy;
+    button.textContent = busy ? 'Searching…' : 'Search';
+    loading.classList.toggle('hidden', !busy);
+  };
 
-  const renderSources = (items) => {
+  const renderSources = (items: Array<{ title?: string; url?: string; snippet?: string }>) => {
     sources.replaceChildren();
     count.textContent = `${items.length} result${items.length === 1 ? '' : 's'}`;
     for (const item of items) {
       const card = document.createElement('article');
-      card.className = 'rounded-2xl border bg-[var(--surface)] p-5 shadow-sm transition hover:shadow-md';
+      card.className = 'rounded-2xl border bg-[var(--card)] p-5 shadow-sm transition hover:shadow-md';
       const title = document.createElement('h3');
       title.className = 'font-semibold';
       title.textContent = item.title || 'Untitled document';
@@ -106,25 +100,33 @@ import Layout from '../layouts/Layout.astro';
       const snippet = document.createElement('p');
       snippet.className = 'mt-3 text-sm leading-6 muted';
       snippet.textContent = item.snippet || 'No excerpt available.';
-      card.append(title, meta, snippet);
+      card.appendChild(title);
+      card.appendChild(meta);
+      card.appendChild(snippet);
       sources.appendChild(card);
     }
   };
 
-  let suggestionTimer;
+  let suggestionTimer: number | undefined;
   input.addEventListener('input', () => {
-    clearTimeout(suggestionTimer);
+    window.clearTimeout(suggestionTimer);
     const value = input.value.trim();
-    if (value.length < 2 || isUrl(value)) { suggestions.classList.add('hidden'); return; }
-    suggestionTimer = setTimeout(async () => {
+    if (value.length < 2) { suggestions.classList.add('hidden'); return; }
+    suggestionTimer = window.setTimeout(async () => {
       try {
         const response = await fetch(`/api/suggest?q=${encodeURIComponent(value)}`);
         const items = await response.json();
         suggestions.replaceChildren();
         for (const item of Array.isArray(items) ? items.slice(0, 6) : []) {
           const option = document.createElement('button');
-          option.type = 'button'; option.className = 'block w-full border-b px-4 py-3 text-left text-sm last:border-0 hover:bg-slate-50 dark:hover:bg-slate-800'; option.textContent = item;
-          option.addEventListener('click', () => { input.value = item; suggestions.classList.add('hidden'); form.requestSubmit(); });
+          option.type = 'button';
+          option.className = 'block w-full border-b px-4 py-3 text-left text-sm last:border-0 hover:bg-muted';
+          option.textContent = String(item);
+          option.addEventListener('click', () => {
+            input.value = String(item);
+            suggestions.classList.add('hidden');
+            form.requestSubmit();
+          });
           suggestions.appendChild(option);
         }
         suggestions.classList.toggle('hidden', !suggestions.children.length);
@@ -132,43 +134,43 @@ import Layout from '../layouts/Layout.astro';
     }, 250);
   });
 
-  document.addEventListener('click', (event) => { if (!suggestions.contains(event.target) && event.target !== input) suggestions.classList.add('hidden'); });
+  document.addEventListener('click', (event) => {
+    if (!suggestions.contains(event.target as Node) && event.target !== input) {
+      suggestions.classList.add('hidden');
+    }
+  });
 
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
     const query = input.value.trim();
     if (!query) return;
-    suggestions.classList.add('hidden'); empty.classList.add('hidden'); results.classList.add('hidden'); crawl.classList.add('hidden'); setBusy(true);
+    suggestions.classList.add('hidden');
+    empty.classList.add('hidden');
+    results.classList.add('hidden');
+    setBusy(true);
     try {
-      if (isUrl(query)) {
-        crawl.classList.remove('hidden');
-        const response = await fetch('/api/crawl', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url: query }) });
-        const data = await response.json();
-        if (!response.ok || !data.success) throw new Error(data.error || 'Unable to index URL.');
-        crawlMessage.textContent = `Indexed successfully: ${data.title || query}`;
-        return;
-      }
-      const [searchResponse, chatResponse] = await Promise.all([
-        fetch(`/api/search?q=${encodeURIComponent(query)}`),
-        fetch('/api/chat', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ message: query }) })
-      ]);
-      const searchData = await searchResponse.json();
-      const chatData = await chatResponse.json();
-      if (!searchResponse.ok) throw new Error(searchData.error || 'Search failed.');
-      renderSources(Array.isArray(searchData.results) ? searchData.results : []);
-      answer.textContent = chatData.answer || 'No synthesis was returned.';
+      const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+      const data = await response.json() as {
+        error?: string;
+        results?: Array<{ title?: string; url?: string; snippet?: string }>;
+      };
+      if (!response.ok) throw new Error(data.error || 'Search failed.');
+      renderSources(Array.isArray(data.results) ? data.results : []);
+      answer.textContent = 'Answer synthesis is available through the authenticated chat API.';
       results.classList.remove('hidden');
     } catch (error) {
       answer.textContent = error instanceof Error ? error.message : 'Something went wrong.';
       results.classList.remove('hidden');
-      sources.replaceChildren(); count.textContent = '';
+      sources.replaceChildren();
+      count.textContent = '';
     } finally {
       setBusy(false);
     }
   });
 
   document.getElementById('theme-toggle')?.addEventListener('click', () => {
-    document.documentElement.classList.toggle('dark');
-    localStorage.setItem('cloudsearch-theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+    const nextTheme = document.documentElement.classList.contains('dark') ? 'light' : 'dark';
+    document.documentElement.classList.toggle('dark', nextTheme === 'dark');
+    localStorage.setItem('colorTheme', nextTheme);
   });
 </script>

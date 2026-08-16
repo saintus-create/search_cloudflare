@@ -1,57 +1,68 @@
 import type { APIRoute } from 'astro';
-import { requireIngestAuth } from '../../lib/api-auth';
+import { env } from 'cloudflare:workers';
+import {
+  enforceRateLimit,
+  jsonResponse,
+  readJsonBody,
+  RequestSecurityError,
+  requireApiAuth,
+} from '../../lib/security';
 
-const MAX_REQUEST_BYTES = 7 * 1024 * 1024;
+const MAX_REQUEST_BYTES = 512 * 1024;
 const MAX_CONTENT_CHARS = 100_000;
 const MAX_TITLE_CHARS = 500;
-const MAX_ORIGINAL_DATA_CHARS = 7_000_000;
 
-const json = (body: Record<string, unknown>, status = 200) =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json; charset=utf-8' },
-  });
+export const POST: APIRoute = async ({ request }) => {
+  const authFailure = await requireApiAuth(request, env, 'INGEST_TOKEN');
+  if (authFailure) return authFailure;
 
-export const POST: APIRoute = async (context) => {
-  const authError = requireIngestAuth(context);
-  if (authError) return authError;
+  const rateFailure = await enforceRateLimit(
+    request,
+    env.RATE_LIMIT,
+    'upload',
+    20,
+    15 * 60 * 1_000,
+  );
+  if (rateFailure) return rateFailure;
 
   try {
-    const contentLength = Number(context.request.headers.get('content-length') || 0);
-    if (contentLength > MAX_REQUEST_BYTES) return json({ error: 'Request body is too large. Files are limited to 5 MB.' }, 413);
-
-    const body = await context.request.json() as {
-      title?: string;
-      content?: string;
-      metadata?: Record<string, unknown>;
-    };
+    if (!env?.DB) return jsonResponse({ error: 'Database binding is unavailable.' }, 503);
+    const body = await readJsonBody<{
+      title?: unknown;
+      content?: unknown;
+      metadata?: unknown;
+    }>(request, MAX_REQUEST_BYTES);
     const title = typeof body.title === 'string' ? body.title.trim() : '';
     const content = typeof body.content === 'string' ? body.content.trim() : '';
-    const suppliedMetadata = body.metadata && typeof body.metadata === 'object' ? body.metadata : {};
-    const originalData = typeof suppliedMetadata.originalData === 'string' ? suppliedMetadata.originalData : '';
+    const suppliedMetadata = body.metadata && typeof body.metadata === 'object' && !Array.isArray(body.metadata)
+      ? body.metadata as Record<string, unknown>
+      : {};
 
-    if (!title || !content) return json({ error: 'Title and content are required' }, 400);
-    if (title.length > MAX_TITLE_CHARS) return json({ error: 'Title is too long' }, 400);
-    if (content.length > MAX_CONTENT_CHARS) return json({ error: 'Content is too long' }, 413);
-    if (originalData.length > MAX_ORIGINAL_DATA_CHARS) return json({ error: 'Original file payload is too large' }, 413);
-
-    const DB = context.locals?.runtime?.env?.DB;
-    if (!DB) return json({ error: 'Database binding (DB) is missing.' }, 500);
+    if (!title || !content) return jsonResponse({ error: 'Title and content are required.' }, 400);
+    if (title.length > MAX_TITLE_CHARS) return jsonResponse({ error: 'Title is too long.' }, 400);
+    if (content.length > MAX_CONTENT_CHARS) return jsonResponse({ error: 'Content is too long.' }, 413);
+    if ('originalData' in suppliedMetadata) {
+      return jsonResponse({ error: 'Binary payloads are not accepted. Store originals in R2.' }, 400);
+    }
 
     const url = `local://${crypto.randomUUID()}`;
-    const metadata = {
-      source: 'manual_upload',
+    const metadata = JSON.stringify({
       ...suppliedMetadata,
-    };
+      source: 'manual_upload',
+      uploaded_at: new Date().toISOString(),
+    });
+    const document = await env.DB.prepare(`
+      INSERT INTO documents (url, title, content, metadata)
+      VALUES (?, ?, ?, ?)
+      RETURNING id
+    `)
+      .bind(url, title, content, metadata)
+      .first<{ id: number }>();
 
-    const result = await DB.prepare(
-      'INSERT INTO documents (url, title, content, metadata) VALUES (?, ?, ?, ?)'
-    )
-      .bind(url, title, content, JSON.stringify(metadata))
-      .run();
-
-    return json({ success: true, id: result.meta.last_row_id, title, url }, 201);
+    if (!document) throw new Error('D1 insert returned no document.');
+    return jsonResponse({ success: true, id: document.id, title, url }, 201);
   } catch (error) {
-    return json({ error: error instanceof Error ? error.message : 'Unexpected upload failure' }, 500);
+    if (error instanceof RequestSecurityError) return jsonResponse({ error: error.message }, error.status);
+    return jsonResponse({ error: 'Unable to upload the document.' }, 503);
   }
 };

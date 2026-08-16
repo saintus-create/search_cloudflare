@@ -6,8 +6,10 @@ set -uo pipefail
 # `--apply`. It never commits, pushes, creates cloud resources, changes secrets,
 # runs production migrations, or deploys.
 
-CONTRACT_STARWIND_VERSION="1.16.2"
-CONTRACT_CLOUDFLARE_ADAPTER_VERSION="13.7.0"
+CONTRACT_STARWIND_VERSION="3.1.0"
+CONTRACT_STARWIND_ADAPTER_VERSION="1.1.0"
+CONTRACT_CLOUDFLARE_ADAPTER_VERSION="14.2.1"
+CONTRACT_VITE_VERSION="8.2.1"
 CONTRACT_WORKERS_TYPES_VERSION="5.20260816.1"
 MODE="audit"
 FETCH=1
@@ -194,7 +196,7 @@ const report={
     tailwind: process.env.RECONCILE_TAILWIND || '',
     adapter: process.env.RECONCILE_ADAPTER || '',
     ui: 'starwind',
-    uiVersion: '1.16.2'
+    uiVersion: '3.1.0'
   },
   configuration: {
     wrangler: process.env.RECONCILE_WRANGLER || '',
@@ -222,7 +224,7 @@ apply_known_changes() {
   astro="$(pkg_value dependencies.astro)"
   tailwind="$(pkg_value devDependencies.tailwindcss)"
   adapter="$(pkg_value dependencies.@astrojs/cloudflare)"
-  [[ "$(major_of "$astro")" == "6" ]] || { echo "Conflict: Astro is not 6.x" >&2; return 1; }
+  [[ "$(major_of "$astro")" == "7" ]] || { echo "Conflict: Astro is not 7.x" >&2; return 1; }
   [[ "$(major_of "$tailwind")" == "4" ]] || { echo "Conflict: Tailwind is not 4.x" >&2; return 1; }
   [[ -n "$adapter" ]] || { echo "Conflict: Cloudflare adapter is absent" >&2; return 1; }
   grep -q "@tailwindcss/vite" astro.config.mjs || { echo "Conflict: Tailwind Vite integration is absent" >&2; return 1; }
@@ -241,7 +243,9 @@ p.scripts={...p.scripts,
   'verify:production':'./scripts/verify-production.sh'
 };
 p.dependencies={...p.dependencies,
-  '@astrojs/cloudflare':'${CONTRACT_CLOUDFLARE_ADAPTER_VERSION}'
+  '@astrojs/cloudflare':'${CONTRACT_CLOUDFLARE_ADAPTER_VERSION}',
+  '@starwind-ui/astro':'${CONTRACT_STARWIND_ADAPTER_VERSION}',
+  'vite':'${CONTRACT_VITE_VERSION}'
 };
 p.devDependencies={...p.devDependencies,
   'starwind':'${CONTRACT_STARWIND_VERSION}',
@@ -273,6 +277,13 @@ concurrency:
   group: cloudflare-search-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  EXPECTED_CF_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+  EXPECTED_PRODUCTION_D1_ID: ${{ vars.PRODUCTION_D1_ID }}
+  EXPECTED_PREVIEW_D1_ID: ${{ vars.PREVIEW_D1_ID }}
+  EXPECTED_RATE_LIMIT_KV_ID: ${{ vars.RATE_LIMIT_KV_ID }}
+  INGEST_ALLOWED_HOSTS: ${{ vars.INGEST_ALLOWED_HOSTS }}
+
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -285,6 +296,8 @@ jobs:
           node-version: 22.19.0
           cache: npm
       - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Generate config from confirmed IDs
+        run: node scripts/configure-cloudflare.mjs --write
       - run: ./scripts/verify-production.sh --skip-install
 
   deploy:
@@ -301,17 +314,15 @@ jobs:
           node-version: 22.19.0
           cache: npm
       - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Generate config from confirmed IDs
+        run: node scripts/configure-cloudflare.mjs --write
       - name: Re-verify pushed production state
         run: ./scripts/verify-production.sh --production --skip-install
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-          EXPECTED_CF_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-          EXPECTED_PRODUCTION_D1_ID: ${{ vars.PRODUCTION_D1_ID }}
-          EXPECTED_PREVIEW_D1_ID: ${{ vars.PREVIEW_D1_ID }}
-          EXPECTED_RATE_LIMIT_KV_ID: ${{ vars.RATE_LIMIT_KV_ID }}
       - name: Deploy Worker
-        run: npx wrangler deploy
+        run: ./node_modules/.bin/wrangler deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
@@ -391,7 +402,13 @@ if git show-ref --verify --quiet refs/remotes/origin/main; then
 else
   fail "origin/main does not exist locally."
 fi
-[[ "$BRANCH" == "main" ]] && pass "Checked-out branch is main." || fail "Checked-out branch is '${BRANCH:-detached}', not main."
+if [[ "$BRANCH" == "main" ]]; then
+  pass "Checked-out branch is main."
+elif [[ "${GITHUB_ACTIONS:-}" == "true" && "${GITHUB_EVENT_NAME:-}" == "pull_request" ]]; then
+  pass "Detached GitHub pull-request checkout is permitted for read-only audit."
+else
+  fail "Checked-out branch is '${BRANCH:-detached}', not main."
+fi
 
 if [[ "$MODE" == "apply" ]]; then
   if [[ "$BRANCH" != "main" || "$APPLY_TREE_SAFE" != true || -z "$ORIGIN_MAIN" || "$HEAD_COMMIT" != "$ORIGIN_MAIN" ]]; then
@@ -451,12 +468,14 @@ node_meets_contract && pass "Node.js meets the >=22.12 contract ($NODE_VERSION).
 ASTRO_VERSION="$(pkg_value dependencies.astro)"
 TAILWIND_VERSION="$(pkg_value devDependencies.tailwindcss)"
 ADAPTER_VERSION="$(pkg_value dependencies.@astrojs/cloudflare)"
+VITE_VERSION="$(pkg_value dependencies.vite)"
 export RECONCILE_ASTRO="$ASTRO_VERSION" RECONCILE_TAILWIND="$TAILWIND_VERSION" RECONCILE_ADAPTER="$ADAPTER_VERSION"
-[[ "$(major_of "$ASTRO_VERSION")" == "6" ]] && pass "Astro is 6.x ($ASTRO_VERSION)." || fail "Astro must be 6.x; found '${ASTRO_VERSION:-missing}'."
+[[ "$(major_of "$ASTRO_VERSION")" == "7" ]] && pass "Astro is 7.x ($ASTRO_VERSION)." || fail "Astro must be 7.x; found '${ASTRO_VERSION:-missing}'."
+[[ "$VITE_VERSION" == "$CONTRACT_VITE_VERSION" ]] && pass "Vite matches Astro 7 ($VITE_VERSION)." || fail "Vite must be $CONTRACT_VITE_VERSION; found '${VITE_VERSION:-missing}'."
 [[ "$(major_of "$TAILWIND_VERSION")" == "4" ]] && pass "Tailwind is 4.x ($TAILWIND_VERSION)." || fail "Tailwind must be 4.x; found '${TAILWIND_VERSION:-missing}'."
-[[ "$ADAPTER_VERSION" == "$CONTRACT_CLOUDFLARE_ADAPTER_VERSION" ]] && grep -q "cloudflare" astro.config.mjs && pass "Astro 6-compatible Cloudflare adapter is configured ($ADAPTER_VERSION)." || fail "Cloudflare adapter must be $CONTRACT_CLOUDFLARE_ADAPTER_VERSION for Astro 6; found '${ADAPTER_VERSION:-missing}'."
+[[ "$ADAPTER_VERSION" == "$CONTRACT_CLOUDFLARE_ADAPTER_VERSION" ]] && grep -q "cloudflare" astro.config.mjs && pass "Current Cloudflare adapter is configured ($ADAPTER_VERSION)." || fail "Cloudflare adapter must be $CONTRACT_CLOUDFLARE_ADAPTER_VERSION for Astro 7; found '${ADAPTER_VERSION:-missing}'."
 grep -q "output:[[:space:]]*['\"]server['\"]" astro.config.mjs && pass "Astro SSR output is enabled." || fail "Astro output must be server/SSR."
-grep -q "@tailwindcss/vite" astro.config.mjs && grep -q '@import "tailwindcss"' src/styles/global.css && pass "Tailwind 4 Vite/CSS integration is present." || fail "Tailwind 4 integration is incomplete."
+grep -q "@tailwindcss/vite" astro.config.mjs && grep -q '@import "tailwindcss"' src/styles/starwind.css && pass "Tailwind 4 Vite/CSS integration is present." || fail "Tailwind 4 integration is incomplete."
 
 if [[ -f package-lock.json ]]; then pass "npm lockfile exists."; else fail "package-lock.json is missing."; fi
 while IFS=$'\t' read -r name version; do
@@ -467,8 +486,10 @@ done < <(node -e 'const p=require("./package.json"); for (const [n,v] of Object.
 echo
 echo "[ui]"
 STARWIND_VERSION="$(pkg_value devDependencies.starwind)"
+STARWIND_ADAPTER_VERSION="$(pkg_value dependencies.@starwind-ui/astro)"
 [[ "$STARWIND_VERSION" == "$CONTRACT_STARWIND_VERSION" ]] && pass "Starwind CLI is pinned to $CONTRACT_STARWIND_VERSION." || fail "Starwind must be pinned to $CONTRACT_STARWIND_VERSION; found '${STARWIND_VERSION:-missing}'."
-if [[ -f starwind.config.json ]] && node -e 'const c=require("./starwind.config.json"); process.exit(c.tailwind?.css==="src/styles/global.css" && c.componentDir==="src/components/starwind" ? 0 : 1)'; then
+[[ "$STARWIND_ADAPTER_VERSION" == "$CONTRACT_STARWIND_ADAPTER_VERSION" ]] && pass "Starwind Astro adapter is pinned to $CONTRACT_STARWIND_ADAPTER_VERSION." || fail "@starwind-ui/astro must be $CONTRACT_STARWIND_ADAPTER_VERSION; found '${STARWIND_ADAPTER_VERSION:-missing}'."
+if [[ -f starwind.config.json ]] && node -e 'const c=require("./starwind.config.json"); process.exit(c.tailwind?.css==="src/styles/starwind.css" && c.componentDir==="src/components/starwind" ? 0 : 1)'; then
   pass "Starwind configuration points to canonical paths."
 else
   fail "Starwind configuration does not point to canonical CSS/component paths."
@@ -480,7 +501,7 @@ if grep -R -E "from ['\"](@/|\.\.?/).*components/starwind|from ['\"]@/components
 else
   fail "Starwind component files exist but are not used by the application."
 fi
-if grep -q '@theme[[:space:]]\+inline' src/styles/global.css && grep -q -- '--color-primary:' src/styles/global.css; then
+if grep -q '@theme[[:space:]]\+inline' src/styles/starwind.css && grep -q -- '--color-primary:' src/styles/starwind.css; then
   pass "Starwind/Tailwind theme mappings are present."
 else
   fail "Shared CSS lacks Starwind Tailwind-4 theme mappings."
@@ -538,8 +559,8 @@ echo
 echo "[security and retrieval]"
 for route in upload crawl; do
   file="src/pages/api/$route.ts"
-  if [[ -f "$file" ]] && grep -q 'requireIngestAuth' "$file" && \
-     grep -R -q 'INGEST_TOKEN' src/lib --include='*.ts'; then
+  if [[ -f "$file" ]] && grep -Eq 'require(Ingest|Api)Auth' "$file" && \
+     grep -q 'INGEST_TOKEN' "$file" && grep -R -q 'INGEST_TOKEN' src/lib --include='*.ts'; then
     pass "/api/$route requires INGEST_TOKEN authentication."
   else
     fail "/api/$route does not visibly enforce fail-closed INGEST_TOKEN authentication."
