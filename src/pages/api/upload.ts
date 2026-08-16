@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { requireIngestAuth } from '../../lib/api-auth';
 
 const MAX_REQUEST_BYTES = 7 * 1024 * 1024;
 const MAX_CONTENT_CHARS = 100_000;
@@ -11,12 +12,15 @@ const json = (body: Record<string, unknown>, status = 200) =>
     headers: { 'content-type': 'application/json; charset=utf-8' },
   });
 
-export const POST: APIRoute = async ({ request, locals }) => {
+export const POST: APIRoute = async (context) => {
+  const authError = requireIngestAuth(context);
+  if (authError) return authError;
+
   try {
-    const contentLength = Number(request.headers.get('content-length') || 0);
+    const contentLength = Number(context.request.headers.get('content-length') || 0);
     if (contentLength > MAX_REQUEST_BYTES) return json({ error: 'Request body is too large. Files are limited to 5 MB.' }, 413);
 
-    const body = await request.json() as {
+    const body = await context.request.json() as {
       title?: string;
       content?: string;
       metadata?: Record<string, unknown>;
@@ -31,7 +35,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     if (content.length > MAX_CONTENT_CHARS) return json({ error: 'Content is too long' }, 413);
     if (originalData.length > MAX_ORIGINAL_DATA_CHARS) return json({ error: 'Original file payload is too large' }, 413);
 
-    const DB = locals?.runtime?.env?.DB;
+    const DB = context.locals?.runtime?.env?.DB;
     if (!DB) return json({ error: 'Database binding (DB) is missing.' }, 500);
 
     const url = `local://${crypto.randomUUID()}`;
