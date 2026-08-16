@@ -15,6 +15,9 @@ case "$MODE" in
   apply)
     exec ./scripts/reconcile.sh --apply
     ;;
+  provision)
+    exec ./scripts/provision-cloudflare.sh "${2:-plan}"
+    ;;
   configure)
     exec node scripts/configure-cloudflare.mjs --write "${@:2}"
     ;;
@@ -45,6 +48,7 @@ Usage: ./scripts/production-ready.sh MODE
 Modes:
   audit              Read-only contract and drift report
   apply              Apply only deterministic, guarded reconciliation
+  provision [mode]   Plan or explicitly create missing preview D1/rate-limit KV
   configure          Generate wrangler.jsonc from confirmed environment IDs
   test               Run the complete local production gate
   production-check   Add read-only Cloudflare account/resource verification

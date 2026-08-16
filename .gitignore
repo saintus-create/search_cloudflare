@@ -18,3 +18,4 @@ insert.sql
 
 # Generated from operator-confirmed Cloudflare resource IDs.
 wrangler.jsonc
+.production-infrastructure.env

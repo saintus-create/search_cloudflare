@@ -41,13 +41,22 @@ export EXPECTED_RATE_LIMIT_KV_ID='32-character-kv-id'
 export INGEST_ALLOWED_HOSTS='docs.example.com,www.example.com'
 ```
 
+Inspect existing resources and, with an explicit account confirmation, provision only a missing preview D1 database and rate-limit KV namespace:
+
+```bash
+./scripts/production-ready.sh provision plan
+export CONFIRM_PROVISION_ACCOUNT_ID="$EXPECTED_CF_ACCOUNT_ID"
+./scripts/production-ready.sh provision apply
+source .production-infrastructure.env
+```
+
 Generate the ignored local Wrangler configuration:
 
 ```bash
 npm run configure:cloudflare
 ```
 
-The command fails if IDs are malformed, production and preview are identical, the allowlist contains wildcards, or required values are missing. Add `--verify-remote` when invoking `scripts/configure-cloudflare.mjs` directly to verify D1 and KV resources read-only.
+The commands fail if IDs are malformed, production and preview are identical, the allowlist contains wildcards, the authenticated account differs, or required values are missing. Add `--verify-remote` when invoking `scripts/configure-cloudflare.mjs` directly to verify D1 and KV resources read-only.
 
 Configure secrets without committing them:
 
