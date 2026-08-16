@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { requireIngestAuth } from '../../lib/api-auth';
 
 const MAX_REQUEST_BYTES = 8 * 1024;
 const MAX_RESPONSE_BYTES = 1_000_000;
@@ -12,16 +13,41 @@ const json = (body: Record<string, unknown>, status = 200) =>
   });
 
 const isPrivateHost = (hostname: string) => {
-  const host = hostname.toLowerCase().replace(/\.$/, '');
-  if (host === 'localhost' || host.endsWith('.localhost') || host === 'local') return true;
-  if (host === 'metadata.google.internal') return true;
-  if (host === '0.0.0.0' || host === '127.0.0.1' || host === '::1' || host === '[::1]') return true;
+  const host = hostname.toLowerCase().replace(/^\[/, '').replace(/\]$/, '').replace(/\.$/, '');
+  if (
+    host === 'localhost' || host.endsWith('.localhost') || host === 'local' ||
+    host.endsWith('.local') || host === 'metadata.google.internal' ||
+    host === 'instance-data.ec2.internal' || host === '0.0.0.0' || host === '::' ||
+    host === '::1'
+  ) return true;
 
+  // IPv4 literals, including IPv4-mapped IPv6 forms.
+  const mapped = host.match(/^::ffff:(\d+)\.(\d+)\.(\d+)\.(\d+)$/i);
   const ipv4 = host.match(/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/);
-  if (!ipv4) return false;
-  const [a, b] = ipv4.slice(1, 3).map(Number);
-  return a === 0 || a === 10 || a === 127 || (a === 169 && b === 254) ||
-    (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168);
+  const octets = (ipv4 || mapped)?.slice(1).map(Number);
+  if (octets) {
+    const [a, b, c, d] = octets;
+    if ([a, b, c, d].some((n) => n < 0 || n > 255)) return true;
+    return a === 0 || a === 10 || a === 127 ||
+      (a === 100 && b >= 64 && b <= 127) ||
+      (a === 169 && b === 254) ||
+      (a === 172 && b >= 16 && b <= 31) ||
+      (a === 192 && b === 168) ||
+      (a === 198 && (b === 18 || b === 19));
+  }
+
+  // IPv6 special-use/private ranges. URL.hostname retains the IPv6 literal without brackets.
+  if (host.includes(':')) {
+    const first = host.split(':')[0] || '0';
+    const prefix = parseInt(first, 16);
+    return Number.isFinite(prefix) && (
+      prefix === 0 || prefix === 0x7f00 || // defensive handling of unusual parser forms
+      (prefix >= 0xfc00 && prefix <= 0xfdff) || // fc00::/7
+      (prefix >= 0xfe80 && prefix <= 0xfebf) // fe80::/10
+    ) || host === '::1';
+  }
+
+  return false;
 };
 
 const validateUrl = (value: string) => {
@@ -78,6 +104,8 @@ const fetchPublicUrl = async (initialUrl: URL) => {
   let current = initialUrl;
 
   for (let attempt = 0; attempt <= MAX_REDIRECTS; attempt += 1) {
+    // Re-validate every hop. Never follow a redirect to a private/local target.
+    current = validateUrl(current.toString());
     const response = await fetch(current, {
       headers: {
         'User-Agent': 'CloudflareSearchBot/1.0',
@@ -109,16 +137,19 @@ const fetchPublicUrl = async (initialUrl: URL) => {
   throw new Error('Unable to fetch URL');
 };
 
-export const POST: APIRoute = async ({ request, locals }) => {
+export const POST: APIRoute = async (context) => {
+  const authError = requireIngestAuth(context);
+  if (authError) return authError;
+
   try {
-    const contentLength = Number(request.headers.get('content-length') || 0);
+    const contentLength = Number(context.request.headers.get('content-length') || 0);
     if (contentLength > MAX_REQUEST_BYTES) return json({ error: 'Request body is too large' }, 413);
 
-    const body = await request.json() as { url?: string };
+    const body = await context.request.json() as { url?: string };
     if (!body.url || typeof body.url !== 'string') return json({ error: 'URL is required' }, 400);
 
     const target = validateUrl(body.url.trim());
-    const env = locals?.runtime?.env || {};
+    const env = context.locals?.runtime?.env || {};
     const DB = env.DB;
     if (!DB) return json({ error: 'Database binding missing.' }, 500);
 
@@ -130,6 +161,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const canonicalUrl = url.toString();
     const title = url.hostname;
     const metadata = JSON.stringify({ source: 'url', fetched_at: new Date().toISOString() });
+
     const existing = await DB.prepare('SELECT id FROM documents WHERE url = ?')
       .bind(canonicalUrl)
       .first<{ id: number }>();
