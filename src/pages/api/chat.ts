@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { buildFtsQuery } from '../../lib/fts';
+import { retrieve } from '../../lib/retrieval';
 
 const MAX_REQUEST_BYTES = 12 * 1024;
 const MAX_MESSAGE_CHARS = 8_000;
@@ -26,18 +26,13 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const AI = env.AI;
     if (!DB) return json({ error: 'Database binding (DB) is missing.' }, 500);
 
-    const ftsQuery = buildFtsQuery(message);
-    const { results: contextResults } = await DB.prepare(`
-      SELECT d.content, d.title, d.url
-      FROM documents d
-      JOIN documents_fts f ON d.id = f.rowid
-      WHERE documents_fts MATCH ?
-      ORDER BY rank
-      LIMIT 3
-    `).bind(ftsQuery).all() as { results: Array<{ content: string; title: string; url: string }> };
+    const { results: contextResults } = await retrieve(DB, message, {
+      limit: 3,
+      contentChars: MAX_CONTEXT_CHARS,
+    });
 
     const context = contextResults
-      .map((r) => `Source: ${r.title} (${r.url})\nContent: ${r.content.substring(0, MAX_CONTEXT_CHARS)}`)
+      .map((r) => `Source: ${r.title} (${r.url})\nContent: ${r.content}`)
       .join('\n\n');
 
     let responseText = "I couldn't find enough indexed evidence to answer that.";
@@ -66,7 +61,7 @@ ${context || '(No matching source documents were retrieved.)'}`;
 
     return json({
       answer: responseText,
-      sources: contextResults.map((r) => ({ title: r.title, url: r.url })),
+      sources: contextResults.map(({ title, url, id, snippet }) => ({ id, title, url, snippet })),
     });
   } catch {
     return json({ error: 'Unable to process the request.' }, 500);
